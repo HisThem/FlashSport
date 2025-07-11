@@ -1,27 +1,28 @@
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-function Navbar() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 这里可以后续集成真实的认证状态
-  const [theme, setTheme] = useState('light');
+const Navbar: React.FC = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // 这里可以后续集成真实的认证状态
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navigate = useNavigate();
 
   // 初始化主题
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
   // 切换主题
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+  const toggleTheme = (): void => {
+    const newTheme: 'light' | 'dark' = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  const handleLogout = () => {
+  const handleLogout = (): void => {
     // 这里可以添加登出逻辑
     setIsLoggedIn(false);
     navigate('/');
@@ -121,6 +122,6 @@ function Navbar() {
       </div>
     </div>
   );
-}
+};
 
 export default Navbar;

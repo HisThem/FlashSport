@@ -1,23 +1,29 @@
+import React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-function Login() {
-  const [formData, setFormData] = useState({
+interface LoginFormData {
+  email: string;
+  password: string;
+}
+
+const Login: React.FC = () => {
+  const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -31,7 +37,7 @@ function Login() {
       
       // 登录成功后跳转到首页
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('登录失败，请检查您的邮箱和密码');
     } finally {
       setIsLoading(false);
@@ -134,6 +140,6 @@ function Login() {
       </div>
     </div>
   );
-}
+};
 
 export default Login;

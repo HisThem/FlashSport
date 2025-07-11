@@ -1,19 +1,28 @@
+import React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-function Register() {
-  const [formData, setFormData] = useState({
+interface RegisterFormData {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  agreeTerms: boolean;
+}
+
+const Register: React.FC = () => {
+  const [formData, setFormData] = useState<RegisterFormData>({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
     agreeTerms: false
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
@@ -21,7 +30,7 @@ function Register() {
     });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -54,7 +63,7 @@ function Register() {
       
       // 注册成功后跳转到登录页面
       navigate('/login');
-    } catch (err) {
+    } catch {
       setError('注册失败，请稍后重试');
     } finally {
       setIsLoading(false);
@@ -216,6 +225,6 @@ function Register() {
       </div>
     </div>
   );
-}
+};
 
 export default Register;

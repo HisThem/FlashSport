@@ -1,6 +1,7 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-function Home() {
+const Home: React.FC = () => {
   return (
     <div className="hero min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10">
       <div className="hero-content text-center">
@@ -85,6 +86,6 @@ function Home() {
       </div>
     </div>
   );
-}
+};
 
 export default Home;
