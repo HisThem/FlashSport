@@ -1,17 +1,48 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import userAPI, { User } from '../api/user';
 
 const Navbar: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false); // 这里可以后续集成真实的认证状态
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navigate = useNavigate();
 
-  // 初始化主题
+  // 初始化用户状态和主题
   useEffect(() => {
+    // 检查登录状态
+    const updateUserState = () => {
+      const loggedIn = userAPI.isLoggedIn();
+      setIsLoggedIn(loggedIn);
+      
+      if (loggedIn) {
+        const user = userAPI.getCurrentUserFromStorage();
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+    };
+
+    // 初始检查
+    updateUserState();
+
+    // 监听登录事件
+    const handleUserLoggedIn = () => {
+      updateUserState();
+    };
+
+    window.addEventListener('userLoggedIn', handleUserLoggedIn);
+
+    // 初始化主题
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
     document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // 清理事件监听器
+    return () => {
+      window.removeEventListener('userLoggedIn', handleUserLoggedIn);
+    };
   }, []);
 
   // 切换主题
@@ -22,10 +53,19 @@ const Navbar: React.FC = () => {
     document.documentElement.setAttribute('data-theme', newTheme);
   };
 
-  const handleLogout = (): void => {
-    // 这里可以添加登出逻辑
-    setIsLoggedIn(false);
-    navigate('/');
+  const handleLogout = async (): Promise<void> => {
+    try {
+      await userAPI.logout();
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      navigate('/');
+    } catch (error) {
+      console.error('登出失败:', error);
+      // 即使登出请求失败，也清除本地状态
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      navigate('/');
+    }
   };
 
   return (
@@ -97,12 +137,17 @@ const Navbar: React.FC = () => {
               <div className="w-10 rounded-full">
                 <img
                   alt="用户头像"
-                  src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                  src={currentUser?.avatar_url || "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"} />
               </div>
             </div>
             <ul
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+              <li>
+                <a className="justify-between">
+                  {currentUser?.username || '用户'}
+                </a>
+              </li>
               <li>
                 <a className="justify-between">
                   个人资料
