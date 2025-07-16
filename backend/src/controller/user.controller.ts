@@ -97,6 +97,19 @@ export class UserController {
     return ApiResponse.success({ exists });
   }
 
+  @Get('auth/verify-token')
+  @UseGuards(JwtAuthGuard)
+  verifyToken(@Request() req: AuthenticatedRequest): ApiResponse {
+    try {
+      const user: User = req.user;
+      return ApiResponse.success(user, 'Token验证成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Token验证失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
   // 用户相关路由
   @Get('user/profile')
   @UseGuards(JwtAuthGuard)

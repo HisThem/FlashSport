@@ -2,8 +2,12 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import userAPI, { LoginRequest } from '../api/user';
+// import { useGuestGuard } from '../hooks/useAuth';
 
 const Login: React.FC = () => {
+  // 暂时注释掉访客守卫，以便调试
+  // const isGuest = useGuestGuard();
+  
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
@@ -16,6 +20,7 @@ const Login: React.FC = () => {
 
   // 检查是否有来自注册页面的成功消息
   useEffect(() => {
+    // 暂时移除isGuest检查，直接处理消息
     if (location.state?.message) {
       setSuccessMessage(location.state.message);
       // 清除location state以防止刷新时重复显示
@@ -47,8 +52,9 @@ const Login: React.FC = () => {
       } else {
         setError(response.message || '登录失败');
       }
-    } catch (error: any) {
-      setError(error.message || '登录失败，请检查您的邮箱和密码');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '登录失败，请检查您的邮箱和密码';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

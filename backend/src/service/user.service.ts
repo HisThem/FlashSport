@@ -79,18 +79,29 @@ export class UserService {
   }
 
   async findById(id: number): Promise<User> {
+    if (!id || isNaN(id)) {
+      throw new NotFoundException('无效的用户ID');
+    }
+    
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
-    return user;
+    
+    // 创建一个新对象，不包含密码字段
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
   }
 
   async updateProfile(
     userId: number,
     updateProfileDto: UpdateProfileDto,
   ): Promise<User> {
-    const user = await this.findById(userId);
+    // 直接从数据库获取用户（包含所有字段）
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
 
     // 如果更新用户名，检查是否已存在
     if (
@@ -106,7 +117,11 @@ export class UserService {
     }
 
     Object.assign(user, updateProfileDto);
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+    
+    // 返回时移除密码字段
+    const { password, ...userWithoutPassword } = savedUser;
+    return userWithoutPassword as User;
   }
 
   async changePassword(
@@ -114,7 +129,12 @@ export class UserService {
     changePasswordDto: ChangePasswordDto,
   ): Promise<void> {
     const { oldPassword, newPassword } = changePasswordDto;
-    const user = await this.findById(userId);
+    
+    // 直接从数据库获取用户（包含密码字段）
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
 
     // 验证旧密码
     const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);

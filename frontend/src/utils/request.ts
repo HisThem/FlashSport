@@ -36,10 +36,17 @@ request.interceptors.response.use(
       
       switch (status) {
         case 401:
-          // 未授权，清除token并跳转到登录页
+          // 未授权，清除token并触发登出事件
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
+          
+          // 触发全局登出事件，让所有组件知道用户已登出
+          window.dispatchEvent(new CustomEvent('userLoggedOut'));
+          
+          // 如果当前不在登录页面，则跳转到登录页面
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login?message=' + encodeURIComponent('登录已过期，请重新登录');
+          }
           break;
         case 403:
           // 禁止访问

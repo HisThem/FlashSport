@@ -1,19 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { corsConfig } from './configuration';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // 启用CORS
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:5173',
-    ], // 允许的前端域名
-    credentials: true,
-  });
+  app.enableCors(corsConfig);
 
   // 启用全局验证管道
   app.useGlobalPipes(

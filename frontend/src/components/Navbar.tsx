@@ -90,7 +90,7 @@ const Navbar: React.FC = () => {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
             <li><Link to="/">首页</Link></li>
-            <li><Link to="/sports">运动项目</Link></li>
+            <li><Link to="/activities">活动项目</Link></li>
             <li><Link to="/events">赛事</Link></li>
             <li><Link to="/about">关于我们</Link></li>
           </ul>
@@ -103,7 +103,7 @@ const Navbar: React.FC = () => {
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
           <li><Link to="/" className="btn btn-ghost">首页</Link></li>
-          <li><Link to="/sports" className="btn btn-ghost">运动项目</Link></li>
+          <li><Link to="/activities" className="btn btn-ghost">活动项目</Link></li>
           <li><Link to="/events" className="btn btn-ghost">赛事</Link></li>
           <li><Link to="/about" className="btn btn-ghost">关于我们</Link></li>
         </ul>
@@ -144,15 +144,15 @@ const Navbar: React.FC = () => {
               tabIndex={0}
               className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
               <li>
-                <a className="justify-between">
+                <Link to="/profile" className="justify-between">
                   {currentUser?.username || '用户'}
-                </a>
+                </Link>
               </li>
               <li>
-                <a className="justify-between">
+                <Link to="/profile" className="justify-between">
                   个人资料
                   <span className="badge">新功能</span>
-                </a>
+                </Link>
               </li>
               <li><a>设置</a></li>
               <li><a onClick={handleLogout}>登出</a></li>

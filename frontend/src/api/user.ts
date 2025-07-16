@@ -52,6 +52,27 @@ export interface ApiResponse<T = any> {
   data?: T;
 }
 
+// 更新用户资料请求参数
+export interface UpdateProfileRequest {
+  username?: string;
+  avatar_url?: string;
+  phone?: string;
+  bio?: string;
+}
+
+// 修改密码请求参数
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+// 用户资料完整信息
+export interface UserProfile extends User {
+  phone?: string;
+  bio?: string;
+  last_login?: string;
+}
+
 // 用户API类
 class UserAPI {
   /**
@@ -60,19 +81,15 @@ class UserAPI {
    * @returns Promise<LoginResponse>
    */
   async login(loginData: LoginRequest): Promise<LoginResponse> {
-    try {
-      const response: LoginResponse = await request.post('/auth/login', loginData);
-      
-      // 登录成功后保存用户信息和token到localStorage
-      if (response.success && response.data) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-      }
-      
-      return response;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || '登录失败');
+    const response: LoginResponse = await request.post('/auth/login', loginData);
+    
+    // 登录成功后保存用户信息和token到localStorage
+    if (response.success && response.data) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
     }
+    
+    return response;
   }
 
   /**
@@ -81,28 +98,22 @@ class UserAPI {
    * @returns Promise<RegisterResponse>
    */
   async register(registerData: RegisterRequest): Promise<RegisterResponse> {
-    try {
-      // 前端验证
-      if (registerData.password !== registerData.confirmPassword) {
-        throw new Error('两次输入的密码不一致');
-      }
-
-      if (registerData.password.length < 6) {
-        throw new Error('密码长度至少为6位');
-      }
-
-      if (!registerData.agreeTerms) {
-        throw new Error('请同意服务条款和隐私政策');
-      }
-
-      // 发送注册请求，不包含confirmPassword和agreeTerms字段
-      const { confirmPassword: _confirmPassword, agreeTerms: _agreeTerms, ...requestData } = registerData;
-      const response: RegisterResponse = await request.post('/auth/register', requestData);
-      
-      return response;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || '注册失败');
+    // 前端验证
+    if (registerData.password !== registerData.confirmPassword) {
+      throw new Error('两次输入的密码不一致');
     }
+
+    if (registerData.password.length < 6) {
+      throw new Error('密码长度至少为6位');
+    }
+
+    if (!registerData.agreeTerms) {
+      throw new Error('请同意服务条款和隐私政策');
+    }
+
+    // 发送注册请求，不包含confirmPassword和agreeTerms字段
+    const { confirmPassword: _confirmPassword, agreeTerms: _agreeTerms, ...requestData } = registerData;
+    return await request.post('/auth/register', requestData);
   }
 
   /**
@@ -117,6 +128,9 @@ class UserAPI {
       // 无论请求是否成功，都清除本地存储
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      
+      // 触发登出事件，通知其他组件更新状态
+      window.dispatchEvent(new CustomEvent('userLoggedOut'));
     }
   }
 
@@ -125,19 +139,15 @@ class UserAPI {
    * @returns Promise<User>
    */
   async getCurrentUser(): Promise<User> {
-    try {
-      const response: ApiResponse<User> = await request.get('/user/profile');
-      
-      if (response.success && response.data) {
-        // 更新本地存储的用户信息
-        localStorage.setItem('user', JSON.stringify(response.data));
-        return response.data;
-      }
-      
-      throw new Error(response.message || '获取用户信息失败');
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || '获取用户信息失败');
+    const response: ApiResponse<User> = await request.get('/user/profile');
+    
+    if (response.success && response.data) {
+      // 更新本地存储的用户信息
+      localStorage.setItem('user', JSON.stringify(response.data));
+      return response.data;
     }
+    
+    throw new Error(response.message || '获取用户信息失败');
   }
 
   /**
@@ -146,19 +156,15 @@ class UserAPI {
    * @returns Promise<User>
    */
   async updateProfile(userData: Partial<Pick<User, 'username' | 'avatar_url'>>): Promise<User> {
-    try {
-      const response: ApiResponse<User> = await request.put('/user/profile', userData);
-      
-      if (response.success && response.data) {
-        // 更新本地存储的用户信息
-        localStorage.setItem('user', JSON.stringify(response.data));
-        return response.data;
-      }
-      
-      throw new Error(response.message || '更新用户信息失败');
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || '更新用户信息失败');
+    const response: ApiResponse<User> = await request.put('/user/profile', userData);
+    
+    if (response.success && response.data) {
+      // 更新本地存储的用户信息
+      localStorage.setItem('user', JSON.stringify(response.data));
+      return response.data;
     }
+    
+    throw new Error(response.message || '更新用户信息失败');
   }
 
   /**
@@ -171,22 +177,16 @@ class UserAPI {
     newPassword: string;
     confirmNewPassword: string;
   }): Promise<ApiResponse> {
-    try {
-      if (passwordData.newPassword !== passwordData.confirmNewPassword) {
-        throw new Error('两次输入的新密码不一致');
-      }
-
-      if (passwordData.newPassword.length < 6) {
-        throw new Error('新密码长度至少为6位');
-      }
-
-      const { confirmNewPassword: _confirmNewPassword, ...requestData } = passwordData;
-      const response: ApiResponse = await request.put('/user/change-password', requestData);
-      
-      return response;
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || error.message || '修改密码失败');
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      throw new Error('两次输入的新密码不一致');
     }
+
+    if (passwordData.newPassword.length < 6) {
+      throw new Error('新密码长度至少为6位');
+    }
+
+    const { confirmNewPassword: _confirmNewPassword, ...requestData } = passwordData;
+    return await request.put('/user/change-password', requestData);
   }
 
   /**
@@ -234,13 +234,48 @@ class UserAPI {
   }
 
   /**
-   * 检查用户是否已登录
+   * 检查用户是否已登录（包含基本检查）
    * @returns boolean
    */
   isLoggedIn(): boolean {
-    const token = localStorage.getItem('token');
-    const user = this.getCurrentUserFromStorage();
-    return !!(token && user);
+    try {
+      const token = localStorage.getItem('token');
+      const user = this.getCurrentUserFromStorage();
+      
+      // 检查token和用户信息是否都存在
+      if (!token || !user) {
+        return false;
+      }
+      
+      // 检查token是否看起来有效（不是空字符串等）
+      if (token.trim().length === 0) {
+        return false;
+      }
+      
+      // 检查用户对象是否有必要的字段
+      if (!user.id || !user.email) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('检查登录状态时出错:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 检查用户是否已登录（包含服务器验证）
+   * @returns Promise<boolean>
+   */
+  async isLoggedInWithVerification(): Promise<boolean> {
+    // 先进行基本检查
+    if (!this.isLoggedIn()) {
+      return false;
+    }
+
+    // 然后验证token是否有效
+    return await this.verifyToken();
   }
 
   /**
@@ -249,6 +284,29 @@ class UserAPI {
    */
   getToken(): string | null {
     return localStorage.getItem('token');
+  }
+
+  /**
+   * 验证token是否有效
+   * @returns Promise<boolean>
+   */
+  async verifyToken(): Promise<boolean> {
+    try {
+      const token = this.getToken();
+      if (!token) {
+        return false;
+      }
+
+      const response: ApiResponse = await request.get('/auth/verify-token');
+      return response.success || false;
+    } catch (error) {
+      console.error('Token验证失败:', error);
+      // 如果是401错误，说明token无效
+      // 清除无效的token
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return false;
+    }
   }
 }
 

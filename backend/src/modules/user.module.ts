@@ -7,14 +7,15 @@ import { UserController } from '../controller/user.controller';
 import { UserService } from '../service/user.service';
 import { DatabaseService } from '../service/database.service';
 import { JwtStrategy } from '../auth/jwt.strategy';
+import { jwtConfig } from '../configuration';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     PassportModule,
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'flashsport-secret-key',
-      signOptions: { expiresIn: '24h' },
+      secret: jwtConfig.secret,
+      signOptions: { expiresIn: jwtConfig.expiresIn },
     }),
   ],
   controllers: [UserController],
