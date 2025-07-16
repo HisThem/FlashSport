@@ -253,11 +253,9 @@ class UserAPI {
       }
       
       // 检查用户对象是否有必要的字段
-      if (!user.id || !user.email) {
-        return false;
-      }
+      return !(!user.id || !user.email);
       
-      return true;
+
     } catch (error) {
       console.error('检查登录状态时出错:', error);
       return false;
