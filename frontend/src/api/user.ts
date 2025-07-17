@@ -1,4 +1,5 @@
 import request from '../utils/request';
+import { AUTH_MODULE, USER_MODULE } from './_prefix';
 
 // 用户相关的类型定义
 export interface User {
@@ -81,7 +82,7 @@ class UserAPI {
    * @returns Promise<LoginResponse>
    */
   async login(loginData: LoginRequest): Promise<LoginResponse> {
-    const response: LoginResponse = await request.post('/auth/login', loginData);
+    const response: LoginResponse = await request.post(`${AUTH_MODULE}/login`, loginData);
     
     // 登录成功后保存用户信息和token到localStorage
     if (response.success && response.data) {
@@ -113,7 +114,7 @@ class UserAPI {
 
     // 发送注册请求，不包含confirmPassword和agreeTerms字段
     const { confirmPassword: _confirmPassword, agreeTerms: _agreeTerms, ...requestData } = registerData;
-    return await request.post('/auth/register', requestData);
+    return await request.post(`${AUTH_MODULE}/register`, requestData);
   }
 
   /**
@@ -121,7 +122,7 @@ class UserAPI {
    */
   async logout(): Promise<void> {
     try {
-      await request.post('/auth/logout');
+      await request.post(`${AUTH_MODULE}/logout`);
     } catch (error) {
       console.error('登出请求失败:', error);
     } finally {
@@ -139,7 +140,7 @@ class UserAPI {
    * @returns Promise<User>
    */
   async getCurrentUser(): Promise<User> {
-    const response: ApiResponse<User> = await request.get('/user/profile');
+    const response: ApiResponse<User> = await request.get(`${USER_MODULE}/profile`);
     
     if (response.success && response.data) {
       // 更新本地存储的用户信息
@@ -156,7 +157,7 @@ class UserAPI {
    * @returns Promise<User>
    */
   async updateProfile(userData: Partial<Pick<User, 'username' | 'avatar_url'>>): Promise<User> {
-    const response: ApiResponse<User> = await request.put('/user/profile', userData);
+    const response: ApiResponse<User> = await request.put(`${USER_MODULE}/profile`, userData);
     
     if (response.success && response.data) {
       // 更新本地存储的用户信息
@@ -186,7 +187,7 @@ class UserAPI {
     }
 
     const { confirmNewPassword: _confirmNewPassword, ...requestData } = passwordData;
-    return await request.put('/user/change-password', requestData);
+    return await request.put(`${USER_MODULE}/change-password`, requestData);
   }
 
   /**
@@ -196,7 +197,7 @@ class UserAPI {
    */
   async checkEmailExists(email: string): Promise<boolean> {
     try {
-      const response: ApiResponse<{ exists: boolean }> = await request.get(`/auth/check-email?email=${encodeURIComponent(email)}`);
+      const response: ApiResponse<{ exists: boolean }> = await request.get(`${AUTH_MODULE}/check-email?email=${encodeURIComponent(email)}`);
       return response.data?.exists || false;
     } catch (error) {
       console.error('检查邮箱失败:', error);
@@ -211,7 +212,7 @@ class UserAPI {
    */
   async checkUsernameExists(username: string): Promise<boolean> {
     try {
-      const response: ApiResponse<{ exists: boolean }> = await request.get(`/auth/check-username?username=${encodeURIComponent(username)}`);
+      const response: ApiResponse<{ exists: boolean }> = await request.get(`${AUTH_MODULE}/check-username?username=${encodeURIComponent(username)}`);
       return response.data?.exists || false;
     } catch (error) {
       console.error('检查用户名失败:', error);
@@ -295,7 +296,7 @@ class UserAPI {
         return false;
       }
 
-      const response: ApiResponse = await request.get('/auth/verify-token');
+      const response: ApiResponse = await request.get(`${AUTH_MODULE}/verify-token`);
       return response.success || false;
     } catch (error) {
       console.error('Token验证失败:', error);
