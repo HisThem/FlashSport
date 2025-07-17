@@ -1,0 +1,116 @@
+name: ✨ Feature Request
+description: 建议一个新功能或改进
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您提出功能建议！我们重视每一个改进建议。
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: ✨ 功能描述
+      description: 简明扼要地描述你想要的功能
+      placeholder: 我希望能够...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 🎯 相关组件
+      description: 这个功能涉及哪个组件？
+      options:
+        - 前端 (Frontend)
+        - 后端 (Backend)
+        - 数据库 (Database)
+        - API
+        - 用户界面 (UI)
+        - 身份验证 (Authentication)
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🚀 优先级
+      description: 这个功能的优先级如何？
+      options:
+        - 低 (Low) - 可有可无
+        - 中 (Medium) - 有用但不紧急
+        - 高 (High) - 重要功能
+        - 严重 (Critical) - 必须功能
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem-solution
+    attributes:
+      label: 🤔 问题和解决方案
+      description: 这个功能解决了什么问题？
+      placeholder: |
+        **问题：** 当前的情况是...
+        **解决方案：** 我建议...
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-stories
+    attributes:
+      label: 👤 用户故事
+      description: 从用户角度描述这个功能
+      placeholder: |
+        作为一个 [用户类型]，
+        我想要 [目标/愿望]，
+        以便 [好处/价值]。
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ 验收标准
+      description: 列出这个功能完成时需要满足的条件
+      placeholder: |
+        - [ ] 用户可以...
+        - [ ] 系统应该...
+        - [ ] 当...时，...
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: 🎨 设计稿/线框图
+      description: 如果有设计想法，请添加图片或描述
+      placeholder: 将设计稿拖拽到这里或描述界面布局...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔀 替代方案
+      description: 描述你考虑过的其他解决方案
+      placeholder: 我也考虑过...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 附加信息
+      description: 添加任何其他相关的上下文信息、链接或参考资料
+      placeholder: 其他相关信息...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认
+      description: 在提交之前，请确认以下内容
+      options:
+        - label: 我已经搜索了现有的 issues，确认这不是重复建议
+          required: true
+        - label: 我已经考虑过这个功能对现有功能的影响
+          required: true
+        - label: 我愿意协助实现这个功能（如果可能的话）
+          required: false

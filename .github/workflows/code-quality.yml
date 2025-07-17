@@ -1,0 +1,120 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 获取完整历史，用于 SonarCloud 分析
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    
+    # Backend 代码质量检查
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+    
+    - name: Run backend linting
+      working-directory: ./backend
+      run: npm run lint
+    
+    - name: Run backend tests with coverage
+      working-directory: ./backend
+      run: npm run test:cov
+    
+    # Frontend 代码质量检查
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Run frontend linting
+      working-directory: ./frontend
+      run: npm run lint
+    
+    # SonarCloud 分析 (可选)
+    # - name: SonarCloud Scan
+    #   uses: SonarSource/sonarcloud-github-action@master
+    #   env:
+    #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    
+    # CodeQL 安全分析
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript-typescript
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  license-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    
+    - name: Install license-checker
+      run: npm install -g license-checker
+    
+    - name: Check backend licenses
+      working-directory: ./backend
+      run: |
+        npm ci
+        license-checker --summary
+    
+    - name: Check frontend licenses
+      working-directory: ./frontend
+      run: |
+        npm ci
+        license-checker --summary
+
+  performance-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    
+    # 构建应用进行性能测试
+    - name: Build backend
+      working-directory: ./backend
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: |
+        npm ci
+        npm run build
+    
+    # Bundle 分析 (前端)
+    - name: Analyze bundle size
+      working-directory: ./frontend
+      run: |
+        npx vite-bundle-analyzer dist --open-analyzer false
+      continue-on-error: true

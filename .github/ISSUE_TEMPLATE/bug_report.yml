@@ -1,0 +1,119 @@
+name: 🐛 Bug Report
+description: 报告一个 bug 来帮助我们改进
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您花时间填写这个 bug 报告！
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🐛 Bug 描述
+      description: 简明扼要地描述这个 bug
+      placeholder: 告诉我们发生了什么...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 🎯 影响组件
+      description: 这个 bug 影响了哪个组件？
+      options:
+        - 前端 (Frontend)
+        - 后端 (Backend)
+        - 数据库 (Database)
+        - API
+        - 用户界面 (UI)
+        - 身份验证 (Authentication)
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 严重程度
+      description: 这个 bug 的严重程度如何？
+      options:
+        - 低 (Low) - 不影响核心功能
+        - 中 (Medium) - 部分功能受影响
+        - 高 (High) - 核心功能受影响
+        - 严重 (Critical) - 应用无法使用
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 🔄 复现步骤
+      description: 告诉我们如何复现这个 bug
+      placeholder: |
+        1. 进入 '...'
+        2. 点击 '....'
+        3. 滚动到 '....'
+        4. 看到错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: ✅ 期望行为
+      description: 描述你期望发生什么
+      placeholder: 应该发生什么...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: ❌ 实际行为
+      description: 描述实际发生了什么
+      placeholder: 实际发生了什么...
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📷 截图
+      description: 如果适用，请添加截图来说明问题
+      placeholder: 将截图拖拽到这里...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🌍 环境信息
+      description: 请填写环境信息
+      value: |
+        - OS: [e.g. macOS, Windows, Linux]
+        - Browser: [e.g. Chrome, Safari, Firefox]
+        - Version: [e.g. 22]
+        - Device: [e.g. iPhone X, Desktop]
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 附加信息
+      description: 添加任何其他相关的上下文信息
+      placeholder: 其他需要了解的信息...
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认
+      description: 在提交之前，请确认以下内容
+      options:
+        - label: 我已经搜索了现有的 issues，确认这不是重复报告
+          required: true
+        - label: 我已经提供了足够的信息来复现这个问题
+          required: true
