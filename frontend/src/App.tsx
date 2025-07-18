@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import Activities from './pages/Activity';
+import MyActivities from './pages/MyActivities';
 import userAPI from './api/user';
 
 const App: React.FC = () => {
@@ -47,6 +48,7 @@ const App: React.FC = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/activities" element={<Activities />} />
+              <Route path="/my-activities" element={<MyActivities />} />
             </Routes>
           </main>
         </div>

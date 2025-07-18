@@ -1,11 +1,157 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Activity, Category, GetActivitiesRequest } from '../api/activity';
+import activityAPI from '../api/activity';
+import userAPI from '../api/user';
+import ActivityCard from '../components/activity/ActivityCard';
+import ActivityDetailModal from '../components/activity/ActivityDetailModal';
+import ActivityFormModal from '../components/activity/ActivityFormModal';
+import SimpleToast from '../components/SimpleToast';
 
 const Activities: React.FC = () => {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
+  
+  // 搜索和筛选状态
+  const [searchParams, setSearchParams] = useState<GetActivitiesRequest>({
+    page: 1,
+    limit: 12,
+    category_id: undefined,
+    keyword: '',
+    status: undefined,
+    sort: 'newest'
+  });
+  
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState('');
+
+  useEffect(() => {
+    loadCategories();
+    loadActivities();
+  }, [searchParams]);
+
+  const loadCategories = async () => {
+    try {
+      const categoriesData = await activityAPI.getCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('加载分类失败:', error);
+      showToast('加载分类失败', 'error');
+    }
+  };
+
+  const loadActivities = async () => {
+    setLoading(true);
+    try {
+      const response = await activityAPI.getActivities(searchParams);
+      setActivities(response.items);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error('加载活动失败:', error);
+      showToast('加载活动失败', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCategoryFilter = (categoryId?: number) => {
+    setSearchParams(prev => ({
+      ...prev,
+      category_id: categoryId,
+      page: 1
+    }));
+  };
+
+  const handleSearch = () => {
+    setSearchParams(prev => ({
+      ...prev,
+      keyword: searchKeyword,
+      page: 1
+    }));
+  };
+
+  const handleSortChange = (sort: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      sort: sort as any,
+      page: 1
+    }));
+  };
+
+  const handlePageChange = (page: number) => {
+    setSearchParams(prev => ({ ...prev, page }));
+  };
+
+  const handleViewDetail = (activity: Activity) => {
+    setSelectedActivity(activity);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCreateActivity = () => {
+    if (!currentUser) {
+      showToast('请先登录', 'error');
+      return;
+    }
+    setEditingActivity(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleEditActivity = (activity: Activity) => {
+    setEditingActivity(activity);
+    setIsFormModalOpen(true);
+  };
+
+  const handleFormSuccess = () => {
+    loadActivities();
+    showToast(editingActivity ? '活动更新成功' : '活动发布成功', 'success');
+  };
+
+  const handleEnroll = async (activityId: number) => {
+    if (!currentUser) {
+      showToast('请先登录', 'error');
+      return;
+    }
+
+    try {
+      await activityAPI.enrollActivity(activityId);
+      loadActivities();
+      showToast('报名成功', 'success');
+    } catch (error: any) {
+      showToast(error.message || '报名失败', 'error');
+    }
+  };
+
+  const handleCancelEnrollment = async (activityId: number) => {
+    try {
+      await activityAPI.cancelEnrollment(activityId);
+      loadActivities();
+      showToast('取消报名成功', 'success');
+    } catch (error: any) {
+      showToast(error.message || '取消报名失败', 'error');
+    }
+  };
+
+  const getCategoryName = (categoryId?: number) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || '全部活动';
+  };
+
   return (
     <div className="min-h-screen bg-base-100 pt-20">
       <div className="container mx-auto px-4 py-8">
         {/* 页面标题 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">
             活动项目
           </h1>
@@ -14,149 +160,147 @@ const Activities: React.FC = () => {
           </p>
         </div>
 
-        {/* 活动分类 */}
-        <div className="mb-8">
-          <div className="flex flex-wrap justify-center gap-4">
-            <button className="btn btn-primary">全部活动</button>
-            <button className="btn btn-outline">球类运动</button>
-            <button className="btn btn-outline">健身运动</button>
-            <button className="btn btn-outline">水上运动</button>
-            <button className="btn btn-outline">户外运动</button>
-            <button className="btn btn-outline">团队运动</button>
+        {/* 搜索和筛选区域 */}
+        <div className="mb-8 space-y-4">
+          {/* 搜索框 */}
+          <div className="flex gap-2 max-w-md mx-auto">
+            <input
+              type="text"
+              placeholder="搜索活动名称或描述..."
+              className="input input-bordered flex-1"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button 
+              className="btn btn-primary"
+              onClick={handleSearch}
+            >
+              搜索
+            </button>
+          </div>
+
+          {/* 分类筛选 */}
+          <div className="flex flex-wrap justify-center gap-2">
+            <button 
+              className={`btn btn-sm ${!searchParams.category_id ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => handleCategoryFilter(undefined)}
+            >
+              全部活动
+            </button>
+            {categories.map(category => (
+              <button
+                key={category.id}
+                className={`btn btn-sm ${searchParams.category_id === category.id ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleCategoryFilter(category.id)}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+
+          {/* 排序和发布按钮 */}
+          <div className="flex justify-between items-center">
+            <select
+              className="select select-bordered select-sm"
+              value={searchParams.sort}
+              onChange={(e) => handleSortChange(e.target.value)}
+            >
+              <option value="newest">最新发布</option>
+              <option value="oldest">最早发布</option>
+              <option value="start_time">按开始时间</option>
+              <option value="participants">按参与人数</option>
+            </select>
+
+            {currentUser && (
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleCreateActivity}
+              >
+                发布活动
+              </button>
+            )}
           </div>
         </div>
 
-        {/* 活动卡片网格 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* 篮球活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>  
-              <img 
-                src="https://images.unsplash.com/photo-1546519638-68e109498ffc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="篮球" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">
-                篮球
-                <div className="badge badge-secondary">热门</div>
-              </h2>
-              <p>锻炼身体协调性，提升团队合作能力，享受激烈的竞技乐趣。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">团队运动</div>
-                <div className="badge badge-outline">室内外</div>
-              </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
+        {/* 活动列表 */}
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="loading loading-spinner loading-lg"></div>
           </div>
+        ) : activities.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {activities.map(activity => (
+                <ActivityCard
+                  key={activity.id}
+                  activity={activity}
+                  onViewDetail={handleViewDetail}
+                  onEnroll={handleEnroll}
+                  onCancelEnrollment={handleCancelEnrollment}
+                  onEdit={handleEditActivity}
+                  isOwner={currentUser?.id === activity.organizer_id}
+                />
+              ))}
+            </div>
 
-          {/* 游泳活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>
-              <img 
-                src="https://images.unsplash.com/photo-1530549387789-4c1017266635?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="游泳" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">
-                游泳
-                <div className="badge badge-accent">推荐</div>
-              </h2>
-              <p>全身性有氧运动，增强心肺功能，低冲击力运动适合各年龄段。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">水上运动</div>
-                <div className="badge badge-outline">有氧运动</div>
+            {/* 分页 */}
+            {totalPages > 1 && (
+              <div className="flex justify-center">
+                <div className="join">
+                  <button 
+                    className="join-item btn"
+                    disabled={searchParams.page === 1}
+                    onClick={() => handlePageChange((searchParams.page || 1) - 1)}
+                  >
+                    «
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button
+                        key={page}
+                        className={`join-item btn ${searchParams.page === page ? 'btn-active' : ''}`}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                  
+                  <button 
+                    className="join-item btn"
+                    disabled={searchParams.page === totalPages}
+                    onClick={() => handlePageChange((searchParams.page || 1) + 1)}
+                  >
+                    »
+                  </button>
+                </div>
               </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🏃‍♂️</div>
+            <h3 className="text-xl font-semibold text-base-content/80 mb-2">
+              暂无活动
+            </h3>
+            <p className="text-base-content/60 mb-4">
+              {searchParams.keyword || searchParams.category_id 
+                ? '没有找到符合条件的活动' 
+                : '还没有人发布活动'}
+            </p>
+            {currentUser && (
+              <button 
+                className="btn btn-primary"
+                onClick={handleCreateActivity}
+              >
+                发布第一个活动
+              </button>
+            )}
           </div>
-
-          {/* 瑜伽活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>
-              <img 
-                src="https://images.unsplash.com/photo-1506629905607-45c7bc7f7bcd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="瑜伽" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">瑜伽</h2>
-              <p>提升身体柔韧性，增强核心力量，缓解压力，获得内心平静。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">健身运动</div>
-                <div className="badge badge-outline">室内</div>
-              </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
-          </div>
-
-          {/* 跑步活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>
-              <img 
-                src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="跑步" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">
-                跑步
-                <div className="badge badge-secondary">热门</div>
-              </h2>
-              <p>最简单有效的有氧运动，增强心肺功能，燃烧卡路里，释放压力。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">有氧运动</div>
-                <div className="badge badge-outline">户外运动</div>
-              </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
-          </div>
-
-          {/* 足球活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>
-              <img 
-                src="https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="足球" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">足球</h2>
-              <p>世界最受欢迎的运动，提升团队协作，增强体能和反应能力。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">团队运动</div>
-                <div className="badge badge-outline">户外</div>
-              </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
-          </div>
-
-          {/* 健身房活动 */}
-          <div className="card bg-base-100 shadow-xl">
-            <figure>
-              <img 
-                src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
-                alt="健身房" 
-                className="h-48 w-full object-cover"
-              />
-            </figure>
-            <div className="card-body">
-              <h2 className="card-title">健身房训练</h2>
-              <p>专业器械训练，科学健身计划，塑造完美身形，提升整体健康水平。</p>
-              <div className="card-actions justify-end">
-                <div className="badge badge-outline">力量训练</div>
-                <div className="badge badge-outline">室内</div>
-              </div>
-              <button className="btn btn-primary mt-4">查看详情</button>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* 统计信息 */}
         <div className="mt-16">
@@ -175,8 +319,8 @@ const Activities: React.FC = () => {
                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                 </svg>
               </div>
-              <div className="stat-title">活动项目</div>
-              <div className="stat-value text-primary">8+</div>
+              <div className="stat-title">活动分类</div>
+              <div className="stat-value text-primary">{categories.length}+</div>
               <div className="stat-desc">涵盖主流运动项目</div>
             </div>
 
@@ -194,9 +338,9 @@ const Activities: React.FC = () => {
                     d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                 </svg>
               </div>
-              <div className="stat-title">参与用户</div>
-              <div className="stat-value text-secondary">1.2K+</div>
-              <div className="stat-desc">活跃运动爱好者</div>
+              <div className="stat-title">活动总数</div>
+              <div className="stat-value text-secondary">{activities.length}</div>
+              <div className="stat-desc">精彩活动等你参与</div>
             </div>
 
             <div className="stat">
@@ -213,9 +357,9 @@ const Activities: React.FC = () => {
                     d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
                 </svg>
               </div>
-              <div className="stat-title">每月活动</div>
-              <div className="stat-value text-accent">46+</div>
-              <div className="stat-desc">精彩活动等你参与</div>
+              <div className="stat-title">当前分类</div>
+              <div className="stat-value text-accent">{getCategoryName(searchParams.category_id)}</div>
+              <div className="stat-desc">活动分类筛选</div>
             </div>
 
             <div className="stat">
@@ -232,32 +376,46 @@ const Activities: React.FC = () => {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
               </div>
-              <div className="stat-title">满意度</div>
-              <div className="stat-value text-info">98%</div>
-              <div className="stat-desc">用户满意度评分</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 号召行动 */}
-        <div className="mt-16 text-center">
-          <div className="hero bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl">
-            <div className="hero-content text-center py-12">
-              <div className="max-w-md">
-                <h2 className="text-3xl font-bold text-primary mb-4">
-                  开始您的运动之旅
-                </h2>
-                <p className="text-lg mb-6 text-base-content/80">
-                  选择您喜爱的活动项目，加入我们的运动社区，与更多运动爱好者一起享受健康生活！
-                </p>
-                <button className="btn btn-primary btn-lg">
-                  立即参与活动
-                </button>
-              </div>
+              <div className="stat-title">页面</div>
+              <div className="stat-value text-info">{searchParams.page}/{totalPages}</div>
+              <div className="stat-desc">当前页面/总页数</div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* 活动详情弹窗 */}
+      <ActivityDetailModal
+        isOpen={isDetailModalOpen}
+        activity={selectedActivity}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedActivity(null);
+        }}
+        onEnroll={handleEnroll}
+        onCancelEnrollment={handleCancelEnrollment}
+        onEdit={handleEditActivity}
+      />
+
+      {/* 活动表单弹窗 */}
+      <ActivityFormModal
+        isOpen={isFormModalOpen}
+        activity={editingActivity}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setEditingActivity(null);
+        }}
+        onSuccess={handleFormSuccess}
+      />
+
+      {/* Toast 提示 */}
+      {toast && (
+        <SimpleToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

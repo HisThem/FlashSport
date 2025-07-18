@@ -151,6 +151,47 @@ export class FormValidator {
 }
 
 /**
+ * 基础验证函数
+ */
+
+/**
+ * 验证必填字段
+ * @param value 值
+ * @returns 是否通过验证
+ */
+export const validateRequired = (value: any): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim() !== '';
+  if (typeof value === 'number') return !isNaN(value);
+  return true;
+};
+
+/**
+ * 验证数字
+ * @param value 值
+ * @param min 最小值（可选）
+ * @param max 最大值（可选）
+ * @returns 是否通过验证
+ */
+export const validateNumber = (value: number, min?: number, max?: number): boolean => {
+  if (isNaN(value)) return false;
+  if (min !== undefined && value < min) return false;
+  if (max !== undefined && value > max) return false;
+  return true;
+};
+
+/**
+ * 验证日期
+ * @param value 日期字符串
+ * @returns 是否通过验证
+ */
+export const validateDate = (value: string): boolean => {
+  if (!value) return false;
+  const date = new Date(value);
+  return !isNaN(date.getTime());
+};
+
+/**
  * 防抖函数
  * @param func 要防抖的函数
  * @param delay 延迟时间（毫秒）
