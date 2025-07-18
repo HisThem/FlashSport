@@ -28,7 +28,7 @@ const App: React.FC = () => {
           // 验证失败，清除本地存储
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          console.log('启动时token验证失败，已清除');
+          console.log('启动时token验证失败，已清除', error);
         }
       }
     };

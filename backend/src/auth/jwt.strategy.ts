@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!payload || !payload.userId) {
       return null; // 返回 null，让 Guard 处理
     }
-    
+
     // 直接返回用户，如果用户不存在 findById 会抛出异常
     // Passport 会自动捕获这些异常并传递给 Guard
     return await this.userService.findById(payload.userId);

@@ -82,14 +82,15 @@ export class UserService {
     if (!id || isNaN(id)) {
       throw new NotFoundException('无效的用户ID');
     }
-    
+
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
-    
+
     // 创建一个新对象，不包含密码字段
-    const { password, ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
   }
 
@@ -118,9 +119,10 @@ export class UserService {
 
     Object.assign(user, updateProfileDto);
     const savedUser = await this.userRepository.save(user);
-    
+
     // 返回时移除密码字段
-    const { password, ...userWithoutPassword } = savedUser;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password: _, ...userWithoutPassword } = savedUser;
     return userWithoutPassword as User;
   }
 
@@ -129,7 +131,7 @@ export class UserService {
     changePasswordDto: ChangePasswordDto,
   ): Promise<void> {
     const { oldPassword, newPassword } = changePasswordDto;
-    
+
     // 直接从数据库获取用户（包含密码字段）
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
