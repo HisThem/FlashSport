@@ -204,7 +204,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           fee_amount: formData.fee_amount,
           category_id: formData.category_id,
           status: formData.status,
-          images: formData.images
+          image_urls: formData.images
         };
         await activityAPI.updateActivity(activity.id, updateData);
       } else {
@@ -221,7 +221,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           fee_type: formData.fee_type,
           fee_amount: formData.fee_amount,
           category_id: formData.category_id,
-          images: formData.images
+          image_urls: formData.images
         };
         await activityAPI.createActivity(createData);
       }

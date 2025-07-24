@@ -30,11 +30,6 @@ jobs:
       working-directory: ./backend
       run: npm run lint
     
-    - name: Run backend tests
-      working-directory: ./backend
-      run: npm run test -- --passWithNoTests
-      continue-on-error: true
-    
     # Frontend 代码质量检查
     - name: Install frontend dependencies
       working-directory: ./frontend

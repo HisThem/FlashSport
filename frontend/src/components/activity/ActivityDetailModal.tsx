@@ -3,6 +3,7 @@ import { Activity, Comment, Enrollment, ActivityStatus, FeeType } from '../../ap
 import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
 import { formatDate, getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
+import { enrichActivityWithEnrollmentStatus } from '../../utils/activity';
 
 interface ActivityDetailModalProps {
   isOpen: boolean;
@@ -69,14 +70,17 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
   if (!isOpen || !activity) return null;
 
-  const isOwner = currentUser?.id === activity.organizer_id;
-  const canEnroll = activity.status === ActivityStatus.RECRUITING && 
-                   !isExpired(activity.registration_deadline) && 
-                   enrollments.length < activity.max_participants &&
-                   !activity.is_enrolled;
-  const canCancelEnrollment = activity.is_enrolled && 
-                             activity.status === ActivityStatus.RECRUITING && 
-                             !isExpired(activity.registration_deadline);
+  // 确保活动有正确的报名状态信息
+  const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
+
+  const isOwner = currentUser?.id === enrichedActivity.organizer_id;
+  const canEnroll = enrichedActivity.status === ActivityStatus.RECRUITING && 
+                   !isExpired(enrichedActivity.registration_deadline) && 
+                   (enrichedActivity.enrollment_count || 0) < enrichedActivity.max_participants &&
+                   !(enrichedActivity.is_enrolled || false);
+  const canCancelEnrollment = (enrichedActivity.is_enrolled || false) && 
+                             enrichedActivity.status === ActivityStatus.RECRUITING && 
+                             !isExpired(enrichedActivity.registration_deadline);
 
   const getStatusText = (status: ActivityStatus) => {
     switch (status) {
@@ -113,7 +117,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     <div className="modal modal-open">
       <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">{activity.name}</h3>
+          <h3 className="font-bold text-lg">{enrichedActivity.name}</h3>
           <button 
             className="btn btn-sm btn-circle btn-ghost"
             onClick={onClose}
@@ -125,8 +129,8 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
         {/* 活动封面图片 */}
         <div className="mb-6">
           <img 
-            src={activity.cover_image_url || 'https://via.placeholder.com/800x300?text=活动图片'} 
-            alt={activity.name}
+            src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/800x300?text=活动图片'} 
+            alt={enrichedActivity.name}
             className="w-full h-64 object-cover rounded-lg"
           />
         </div>
@@ -136,80 +140,80 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
           <div className="space-y-4">
             <div>
               <h4 className="font-semibold text-lg mb-2">活动详情</h4>
-              <p className="text-base-content/80">{activity.description}</p>
+              <p className="text-base-content/80">{enrichedActivity.description}</p>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="font-medium">状态:</span>
                 <span className={`badge ${
-                  activity.status === ActivityStatus.RECRUITING ? 'badge-success' :
-                  activity.status === ActivityStatus.PREPARING ? 'badge-info' :
-                  activity.status === ActivityStatus.FINISHED ? 'badge-neutral' :
+                  enrichedActivity.status === ActivityStatus.RECRUITING ? 'badge-success' :
+                  enrichedActivity.status === ActivityStatus.PREPARING ? 'badge-info' :
+                  enrichedActivity.status === ActivityStatus.FINISHED ? 'badge-neutral' :
                   'badge-error'
                 }`}>
-                  {getStatusText(activity.status)}
+                  {getStatusText(enrichedActivity.status)}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">类别:</span>
-                <span className="badge badge-primary">{activity.category?.name}</span>
+                <span className="badge badge-primary">{enrichedActivity.category?.name}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">地点:</span>
-                <span>{activity.location}</span>
+                <span>{enrichedActivity.location}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">开始时间:</span>
-                <span>{getFriendlyDate(activity.start_time)}</span>
+                <span>{getFriendlyDate(enrichedActivity.start_time)}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">结束时间:</span>
-                <span>{getFriendlyDate(activity.end_time)}</span>
+                <span>{getFriendlyDate(enrichedActivity.end_time)}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">报名截止:</span>
-                <span>{getFriendlyDate(activity.registration_deadline)}</span>
-                {!isExpired(activity.registration_deadline) && (
+                <span>{getFriendlyDate(enrichedActivity.registration_deadline)}</span>
+                {!isExpired(enrichedActivity.registration_deadline) && (
                   <span className="text-sm text-warning">
-                    ({getTimeLeft(activity.registration_deadline)})
+                    ({getTimeLeft(enrichedActivity.registration_deadline)})
                   </span>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">费用:</span>
-                <span>{getFeeText(activity.fee_type, activity.fee_amount)}</span>
+                <span>{getFeeText(enrichedActivity.fee_type, enrichedActivity.fee_amount)}</span>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">参与人数:</span>
-                <span>{enrollments.length}/{activity.max_participants}人</span>
+                <span>{enrollments.length}/{enrichedActivity.max_participants}人</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-4">
             {/* 发起人信息 */}
-            {activity.organizer && (
+            {enrichedActivity.organizer && (
               <div>
                 <h4 className="font-semibold text-lg mb-2">发起人</h4>
                 <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
                   <div className="avatar">
                     <div className="w-12 h-12 rounded-full">
                       <img 
-                        src={activity.organizer.avatar_url || 'https://via.placeholder.com/48?text=头像'} 
-                        alt={activity.organizer.username}
+                        src={enrichedActivity.organizer.avatar_url || 'https://via.placeholder.com/48?text=头像'} 
+                        alt={enrichedActivity.organizer.username}
                       />
                     </div>
                   </div>
                   <div>
-                    <div className="font-medium">{activity.organizer.username}</div>
+                    <div className="font-medium">{enrichedActivity.organizer.username}</div>
                   </div>
                 </div>
               </div>
@@ -219,10 +223,10 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
             <div className="space-y-2">
               {isOwner ? (
                 <>
-                  {activity.status === ActivityStatus.RECRUITING && (
+                  {enrichedActivity.status === ActivityStatus.RECRUITING && (
                     <button 
                       className="btn btn-primary w-full"
-                      onClick={() => onEdit && onEdit(activity)}
+                      onClick={() => onEdit && onEdit(enrichedActivity)}
                     >
                       编辑活动
                     </button>
@@ -233,7 +237,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                   {canEnroll && onEnroll && (
                     <button 
                       className="btn btn-primary w-full"
-                      onClick={() => onEnroll(activity.id)}
+                      onClick={() => onEnroll(enrichedActivity.id)}
                     >
                       立即报名
                     </button>
@@ -242,7 +246,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                   {canCancelEnrollment && onCancelEnrollment && (
                     <button 
                       className="btn btn-error w-full"
-                      onClick={() => onCancelEnrollment(activity.id)}
+                      onClick={() => onCancelEnrollment(enrichedActivity.id)}
                     >
                       取消报名
                     </button>
@@ -278,7 +282,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
           <h4 className="font-semibold text-lg mb-3">评论 ({comments.length}条)</h4>
           
           {/* 发表评论 */}
-          {currentUser && activity.status === ActivityStatus.FINISHED && activity.is_enrolled && (
+          {currentUser && enrichedActivity.status === ActivityStatus.FINISHED && (enrichedActivity.is_enrolled || false) && (
             <div className="mb-4 p-4 bg-base-200 rounded-lg">
               <h5 className="font-medium mb-2">发表评论</h5>
               <div className="flex items-center gap-2 mb-2">

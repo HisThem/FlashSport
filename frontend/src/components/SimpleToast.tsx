@@ -60,11 +60,11 @@ const SimpleToast: React.FC<SimpleToastProps> = ({ message, type, onClose }) => 
   };
 
   return (
-    <div className="toast toast-top toast-center z-50">
-      <div className={`alert ${getToastClass()} shadow-lg`}>
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[99999]">
+      <div className={`alert ${getToastClass()} shadow-lg min-w-max`}>
         {getIcon()}
-        <span>{message}</span>
-        <button className="btn btn-sm btn-circle btn-ghost" onClick={onClose}>
+        <span className="font-medium">{message}</span>
+        <button className="btn btn-sm btn-circle btn-ghost ml-2" onClick={onClose}>
           ✕
         </button>
       </div>

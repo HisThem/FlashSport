@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
-import { formatDate, formatTime, isExpired } from '../../utils/date';
+import { formatDate, formatTime } from '../../utils/date';
+import { enrichActivityWithEnrollmentStatus, canUserEnroll, canUserCancelEnrollment } from '../../utils/activity';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -21,6 +22,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   showActions = true,
   isOwner = false
 }) => {
+  // 确保活动有正确的报名状态信息
+  const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
+
   // 获取状态显示文本和样式
   const getStatusBadge = (status: ActivityStatus) => {
     switch (status) {
@@ -55,45 +59,40 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
   // 检查是否可以报名
   const canEnroll = () => {
-    return activity.status === ActivityStatus.RECRUITING && 
-           !isExpired(activity.registration_deadline) && 
-           (activity.enrollment_count || 0) < activity.max_participants &&
-           !activity.is_enrolled;
+    return canUserEnroll(enrichedActivity);
   };
 
   // 检查是否可以取消报名
   const canCancelEnrollment = () => {
-    return activity.is_enrolled && 
-           activity.status === ActivityStatus.RECRUITING && 
-           !isExpired(activity.registration_deadline);
+    return canUserCancelEnrollment(enrichedActivity);
   };
 
   return (
     <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
       <figure className="relative">
         <img 
-          src={activity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
-          alt={activity.name}
+          src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
+          alt={enrichedActivity.name}
           className="h-48 w-full object-cover"
         />
         <div className="absolute top-2 right-2">
-          {getStatusBadge(activity.status)}
+          {getStatusBadge(enrichedActivity.status)}
         </div>
         <div className="absolute top-2 left-2">
-          <div className="badge badge-primary">{activity.category?.name}</div>
+          <div className="badge badge-primary">{enrichedActivity.category?.name}</div>
         </div>
       </figure>
       
       <div className="card-body">
         <h2 className="card-title">
-          {activity.name}
-          {activity.is_enrolled && (
+          {enrichedActivity.name}
+          {(enrichedActivity.is_enrolled || false) && (
             <div className="badge badge-secondary">已报名</div>
           )}
         </h2>
         
         <p className="text-sm text-base-content/70 line-clamp-2">
-          {activity.description}
+          {enrichedActivity.description}
         </p>
         
         <div className="space-y-2 text-sm">
@@ -102,7 +101,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-base-content/80">{activity.location}</span>
+            <span className="text-base-content/80">{enrichedActivity.location}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -110,7 +109,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <span className="text-base-content/80">
-              {formatDate(activity.start_time)} {formatTime(activity.start_time)}
+              {formatDate(enrichedActivity.start_time)} {formatTime(enrichedActivity.start_time)}
             </span>
           </div>
           
@@ -119,7 +118,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
             <span className="text-base-content/80">
-              {activity.enrollment_count || 0}/{activity.max_participants}人
+              {enrichedActivity.enrollment_count || 0}/{enrichedActivity.max_participants}人
             </span>
           </div>
           
@@ -128,21 +127,21 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
             <span className="text-base-content/80">
-              {getFeeText(activity.fee_type, activity.fee_amount)}
+              {getFeeText(enrichedActivity.fee_type, enrichedActivity.fee_amount)}
             </span>
           </div>
           
-          {activity.organizer && (
+          {enrichedActivity.organizer && (
             <div className="flex items-center gap-2">
               <div className="avatar">
                 <div className="w-6 h-6 rounded-full">
                   <img 
-                    src={activity.organizer.avatar_url || 'https://via.placeholder.com/40?text=头像'} 
-                    alt={activity.organizer.username}
+                    src={enrichedActivity.organizer.avatar_url || 'https://via.placeholder.com/40?text=头像'} 
+                    alt={enrichedActivity.organizer.username}
                   />
                 </div>
               </div>
-              <span className="text-base-content/80">发起人: {activity.organizer.username}</span>
+              <span className="text-base-content/80">发起人: {enrichedActivity.organizer.username}</span>
             </div>
           )}
         </div>
@@ -151,17 +150,17 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           <div className="card-actions justify-end mt-4">
             <button 
               className="btn btn-outline btn-sm"
-              onClick={() => onViewDetail(activity)}
+              onClick={() => onViewDetail(enrichedActivity)}
             >
               查看详情
             </button>
             
             {isOwner ? (
               <>
-                {activity.status === ActivityStatus.RECRUITING && (
+                {enrichedActivity.status === ActivityStatus.RECRUITING && (
                   <button 
                     className="btn btn-primary btn-sm"
-                    onClick={() => onEdit && onEdit(activity)}
+                    onClick={() => onEdit && onEdit(enrichedActivity)}
                   >
                     编辑活动
                   </button>
@@ -172,7 +171,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {canEnroll() && onEnroll && (
                   <button 
                     className="btn btn-primary btn-sm"
-                    onClick={() => onEnroll(activity.id)}
+                    onClick={() => onEnroll(enrichedActivity.id)}
                   >
                     立即报名
                   </button>
@@ -181,7 +180,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {canCancelEnrollment() && onCancelEnrollment && (
                   <button 
                     className="btn btn-error btn-sm"
-                    onClick={() => onCancelEnrollment(activity.id)}
+                    onClick={() => onCancelEnrollment(enrichedActivity.id)}
                   >
                     取消报名
                   </button>

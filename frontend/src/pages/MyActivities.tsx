@@ -6,6 +6,7 @@ import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
 import SimpleToast from '../components/SimpleToast';
+import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
 const MyActivities: React.FC = () => {
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
@@ -32,10 +33,14 @@ const MyActivities: React.FC = () => {
     try {
       if (activeTab === 'published') {
         const response = await activityAPI.getMyActivities();
-        setMyActivities(response.items);
+        // 为我发布的活动添加报名状态信息
+        const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
+        setMyActivities(enrichedActivities);
       } else {
         const response = await activityAPI.getMyEnrolledActivities();
-        setEnrolledActivities(response.items);
+        // 为我参与的活动添加报名状态信息
+        const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
+        setEnrolledActivities(enrichedActivities);
       }
     } catch (error) {
       console.error('加载活动失败:', error);

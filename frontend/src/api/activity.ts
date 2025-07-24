@@ -62,6 +62,7 @@ export interface Activity {
   };
   category?: Category;
   images?: ActivityImage[];
+  enrollments?: Enrollment[];
   enrollment_count?: number;
   is_enrolled?: boolean;
 }
@@ -108,7 +109,7 @@ export interface CreateActivityRequest {
   fee_type: FeeType;
   fee_amount: number;
   category_id: number;
-  images?: string[];
+  image_urls?: string[];
 }
 
 // 更新活动请求参数
@@ -125,7 +126,7 @@ export interface UpdateActivityRequest {
   fee_amount?: number;
   category_id?: number;
   status?: ActivityStatus;
-  images?: string[];
+  image_urls?: string[];
 }
 
 // 获取活动列表请求参数

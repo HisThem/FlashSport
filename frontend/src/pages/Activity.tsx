@@ -6,6 +6,7 @@ import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
 import SimpleToast from '../components/SimpleToast';
+import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
 const Activities: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -50,7 +51,9 @@ const Activities: React.FC = () => {
     setLoading(true);
     try {
       const response = await activityAPI.getActivities(searchParams);
-      setActivities(response.items);
+      // 为活动列表添加报名状态信息
+      const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
+      setActivities(enrichedActivities);
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('加载活动失败:', error);
