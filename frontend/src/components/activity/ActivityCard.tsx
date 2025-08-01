@@ -1,7 +1,7 @@
 import React from 'react';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
 import { formatDate, formatTime } from '../../utils/date';
-import { enrichActivityWithEnrollmentStatus, canUserEnroll, canUserCancelEnrollment } from '../../utils/activity';
+import { enrichActivityWithEnrollmentStatus, canUserEnroll, canUserCancelEnrollment, isRegistrationExpired } from '../../utils/activity';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -26,7 +26,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
 
   // 获取状态显示文本和样式
-  const getStatusBadge = (status: ActivityStatus) => {
+  const getStatusBadge = (activity: Activity) => {
+    const status = activity.status;
+    
+    // 如果状态是报名中，但报名已过期，显示已过期
+    if (status === ActivityStatus.RECRUITING && isRegistrationExpired(activity.registration_deadline)) {
+      return <div className="badge badge-warning">已过期</div>;
+    }
+    
     switch (status) {
       case ActivityStatus.PREPARING:
         return <div className="badge badge-info">筹备中</div>;
@@ -76,7 +83,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           className="h-48 w-full object-cover"
         />
         <div className="absolute top-2 right-2">
-          {getStatusBadge(enrichedActivity.status)}
+          {getStatusBadge(enrichedActivity)}
         </div>
         <div className="absolute top-2 left-2">
           <div className="badge badge-primary">{enrichedActivity.category?.name}</div>

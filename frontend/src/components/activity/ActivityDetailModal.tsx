@@ -3,7 +3,7 @@ import { Activity, Comment, Enrollment, ActivityStatus, FeeType } from '../../ap
 import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
 import { formatDate, getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
-import { enrichActivityWithEnrollmentStatus } from '../../utils/activity';
+import { enrichActivityWithEnrollmentStatus, isRegistrationExpired } from '../../utils/activity';
 
 interface ActivityDetailModalProps {
   isOpen: boolean;
@@ -82,7 +82,14 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                              enrichedActivity.status === ActivityStatus.RECRUITING && 
                              !isExpired(enrichedActivity.registration_deadline);
 
-  const getStatusText = (status: ActivityStatus) => {
+  const getStatusText = (activity: Activity) => {
+    const status = activity.status;
+    
+    // 如果状态是报名中，但报名已过期，显示已过期
+    if (status === ActivityStatus.RECRUITING && isRegistrationExpired(activity.registration_deadline)) {
+      return '已过期';
+    }
+    
     switch (status) {
       case ActivityStatus.PREPARING: return '筹备中';
       case ActivityStatus.RECRUITING: return '报名中';
@@ -147,12 +154,13 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
               <div className="flex items-center gap-2">
                 <span className="font-medium">状态:</span>
                 <span className={`badge ${
+                  enrichedActivity.status === ActivityStatus.RECRUITING && isRegistrationExpired(enrichedActivity.registration_deadline) ? 'badge-warning' :
                   enrichedActivity.status === ActivityStatus.RECRUITING ? 'badge-success' :
                   enrichedActivity.status === ActivityStatus.PREPARING ? 'badge-info' :
                   enrichedActivity.status === ActivityStatus.FINISHED ? 'badge-neutral' :
                   'badge-error'
                 }`}>
-                  {getStatusText(enrichedActivity.status)}
+                  {getStatusText(enrichedActivity)}
                 </span>
               </div>
 
