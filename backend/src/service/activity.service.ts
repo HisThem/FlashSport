@@ -6,7 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Activity, ActivityStatus } from '../entities/activity.entity';
 import { Category } from '../entities/category.entity';
 import { Enrollment, EnrollmentStatus } from '../entities/enrollment.entity';
@@ -51,7 +51,9 @@ export class ActivityService {
     // 验证时间逻辑
     const startTime = new Date(createActivityDto.start_time);
     const endTime = new Date(createActivityDto.end_time);
-    const registrationDeadline = new Date(createActivityDto.registration_deadline);
+    const registrationDeadline = new Date(
+      createActivityDto.registration_deadline,
+    );
 
     if (endTime <= startTime) {
       throw new BadRequestException('活动结束时间必须晚于开始时间');
@@ -97,7 +99,15 @@ export class ActivityService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 10, category_id, keyword, status, fee_type, sort = 'newest' } = queryDto;
+    const {
+      page = 1,
+      limit = 10,
+      category_id,
+      keyword,
+      status,
+      fee_type,
+      sort = 'newest',
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.activityRepository
@@ -105,13 +115,20 @@ export class ActivityService {
       .leftJoinAndSelect('activity.organizer', 'organizer')
       .leftJoinAndSelect('activity.category', 'category')
       .leftJoinAndSelect('activity.images', 'images')
-      .leftJoinAndSelect('activity.enrollments', 'enrollments', 'enrollments.status = :enrolledStatus', {
-        enrolledStatus: EnrollmentStatus.ENROLLED,
-      })
+      .leftJoinAndSelect(
+        'activity.enrollments',
+        'enrollments',
+        'enrollments.status = :enrolledStatus',
+        {
+          enrolledStatus: EnrollmentStatus.ENROLLED,
+        },
+      )
       .leftJoinAndSelect('enrollments.user', 'enrollmentUser');
 
     if (category_id) {
-      queryBuilder.andWhere('activity.category_id = :category_id', { category_id });
+      queryBuilder.andWhere('activity.category_id = :category_id', {
+        category_id,
+      });
     }
 
     if (status) {
@@ -152,9 +169,7 @@ export class ActivityService {
         queryBuilder.orderBy('activity.created_at', 'DESC');
     }
 
-    queryBuilder
-      .skip(skip)
-      .take(limit);
+    queryBuilder.skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
@@ -202,18 +217,29 @@ export class ActivityService {
     }
 
     // 检查活动状态：只有筹备中或报名中的活动可以修改
-    if (activity.status === ActivityStatus.FINISHED || activity.status === ActivityStatus.CANCELLED) {
+    if (
+      activity.status === ActivityStatus.FINISHED ||
+      activity.status === ActivityStatus.CANCELLED
+    ) {
       throw new ForbiddenException('已结束或已取消的活动不能修改');
     }
 
     const { image_urls, ...updateData } = updateActivityDto;
 
     // 验证时间逻辑（如果有更新时间）
-    if (updateData.start_time || updateData.end_time || updateData.registration_deadline) {
-      const startTime = updateData.start_time ? new Date(updateData.start_time) : activity.start_time;
-      const endTime = updateData.end_time ? new Date(updateData.end_time) : activity.end_time;
-      const registrationDeadline = updateData.registration_deadline 
-        ? new Date(updateData.registration_deadline) 
+    if (
+      updateData.start_time ||
+      updateData.end_time ||
+      updateData.registration_deadline
+    ) {
+      const startTime = updateData.start_time
+        ? new Date(updateData.start_time)
+        : activity.start_time;
+      const endTime = updateData.end_time
+        ? new Date(updateData.end_time)
+        : activity.end_time;
+      const registrationDeadline = updateData.registration_deadline
+        ? new Date(updateData.registration_deadline)
         : activity.registration_deadline;
 
       if (endTime <= startTime) {
@@ -237,9 +263,13 @@ export class ActivityService {
 
     // 更新活动信息
     Object.assign(activity, updateData);
-    if (updateData.start_time) activity.start_time = new Date(updateData.start_time);
+    if (updateData.start_time)
+      activity.start_time = new Date(updateData.start_time);
     if (updateData.end_time) activity.end_time = new Date(updateData.end_time);
-    if (updateData.registration_deadline) activity.registration_deadline = new Date(updateData.registration_deadline);
+    if (updateData.registration_deadline)
+      activity.registration_deadline = new Date(
+        updateData.registration_deadline,
+      );
 
     await this.activityRepository.save(activity);
 
@@ -350,7 +380,7 @@ export class ActivityService {
 
   async initializeCategories(): Promise<void> {
     const categories = ['生活', '健身', '乒乓球', '篮球', '足球'];
-    
+
     for (const categoryName of categories) {
       const existingCategory = await this.categoryRepository.findOne({
         where: { name: categoryName },
@@ -363,7 +393,10 @@ export class ActivityService {
     }
   }
 
-  async getMyActivities(userId: number, queryDto: ActivityQueryDto): Promise<{
+  async getMyActivities(
+    userId: number,
+    queryDto: ActivityQueryDto,
+  ): Promise<{
     items: Activity[];
     total: number;
     page: number;
@@ -378,9 +411,14 @@ export class ActivityService {
       .leftJoinAndSelect('activity.organizer', 'organizer')
       .leftJoinAndSelect('activity.category', 'category')
       .leftJoinAndSelect('activity.images', 'images')
-      .leftJoinAndSelect('activity.enrollments', 'enrollments', 'enrollments.status = :enrolledStatus', {
-        enrolledStatus: EnrollmentStatus.ENROLLED,
-      })
+      .leftJoinAndSelect(
+        'activity.enrollments',
+        'enrollments',
+        'enrollments.status = :enrolledStatus',
+        {
+          enrolledStatus: EnrollmentStatus.ENROLLED,
+        },
+      )
       .leftJoinAndSelect('enrollments.user', 'enrollmentUser')
       .where('activity.organizer_id = :userId', { userId });
 
@@ -388,10 +426,7 @@ export class ActivityService {
       queryBuilder.andWhere('activity.status = :status', { status });
     }
 
-    queryBuilder
-      .orderBy('activity.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
+    queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
@@ -405,7 +440,10 @@ export class ActivityService {
     };
   }
 
-  async getMyEnrolledActivities(userId: number, queryDto: ActivityQueryDto): Promise<{
+  async getMyEnrolledActivities(
+    userId: number,
+    queryDto: ActivityQueryDto,
+  ): Promise<{
     items: Activity[];
     total: number;
     page: number;
@@ -420,23 +458,30 @@ export class ActivityService {
       .leftJoinAndSelect('activity.organizer', 'organizer')
       .leftJoinAndSelect('activity.category', 'category')
       .leftJoinAndSelect('activity.images', 'images')
-      .leftJoinAndSelect('activity.enrollments', 'enrollments', 'enrollments.status = :enrolledStatus', {
-        enrolledStatus: EnrollmentStatus.ENROLLED,
-      })
+      .leftJoinAndSelect(
+        'activity.enrollments',
+        'enrollments',
+        'enrollments.status = :enrolledStatus',
+        {
+          enrolledStatus: EnrollmentStatus.ENROLLED,
+        },
+      )
       .leftJoinAndSelect('enrollments.user', 'enrollmentUser')
-      .innerJoin('activity.enrollments', 'myEnrollment', 'myEnrollment.user_id = :userId AND myEnrollment.status = :enrolledStatus', {
-        userId,
-        enrolledStatus: EnrollmentStatus.ENROLLED,
-      });
+      .innerJoin(
+        'activity.enrollments',
+        'myEnrollment',
+        'myEnrollment.user_id = :userId AND myEnrollment.status = :enrolledStatus',
+        {
+          userId,
+          enrolledStatus: EnrollmentStatus.ENROLLED,
+        },
+      );
 
     if (status) {
       queryBuilder.andWhere('activity.status = :status', { status });
     }
 
-    queryBuilder
-      .orderBy('activity.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
+    queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
@@ -451,25 +496,21 @@ export class ActivityService {
   }
 
   async getActivityEnrollments(activityId: number): Promise<any[]> {
-    const enrollments = await this.enrollmentRepository.find({
-      where: { 
+    return this.enrollmentRepository.find({
+      where: {
         activity_id: activityId,
-        status: EnrollmentStatus.ENROLLED 
+        status: EnrollmentStatus.ENROLLED,
       },
       relations: ['user'],
       order: { enroll_time: 'ASC' },
     });
-
-    return enrollments;
   }
 
   async getActivityComments(activityId: number): Promise<Comment[]> {
-    const comments = await this.commentRepository.find({
+    return this.commentRepository.find({
       where: { activity_id: activityId },
       relations: ['user'],
       order: { create_time: 'DESC' },
     });
-
-    return comments;
   }
 }

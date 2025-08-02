@@ -17,9 +17,15 @@ import {
   CreateActivityDto,
   UpdateActivityDto,
   ActivityQueryDto,
-  CreateCommentDto,
 } from '../dto/activity.dto';
 import { ApiResponse } from '../dto/response.dto';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    id: number;
+    username: string;
+  };
+}
 
 @Controller('api/activity')
 export class ActivityController {
@@ -28,7 +34,7 @@ export class ActivityController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async createActivity(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() createActivityDto: CreateActivityDto,
   ): Promise<ApiResponse> {
     const activity = await this.activityService.createActivity(
@@ -43,7 +49,9 @@ export class ActivityController {
   }
 
   @Get()
-  async getActivities(@Query() queryDto: ActivityQueryDto): Promise<ApiResponse> {
+  async getActivities(
+    @Query() queryDto: ActivityQueryDto,
+  ): Promise<ApiResponse> {
     const result = await this.activityService.getActivities(queryDto);
     return {
       success: true,
@@ -65,7 +73,7 @@ export class ActivityController {
   @Get('my')
   @UseGuards(JwtAuthGuard)
   async getMyActivities(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query() queryDto: ActivityQueryDto,
   ): Promise<ApiResponse> {
     const result = await this.activityService.getMyActivities(
@@ -82,7 +90,7 @@ export class ActivityController {
   @Get('enrolled')
   @UseGuards(JwtAuthGuard)
   async getMyEnrolledActivities(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query() queryDto: ActivityQueryDto,
   ): Promise<ApiResponse> {
     const result = await this.activityService.getMyEnrolledActivities(
@@ -97,7 +105,9 @@ export class ActivityController {
   }
 
   @Get(':id')
-  async getActivity(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse> {
+  async getActivity(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
     const activity = await this.activityService.getActivityById(id);
     return {
       success: true,
@@ -110,7 +120,7 @@ export class ActivityController {
   @UseGuards(JwtAuthGuard)
   async updateActivity(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Body() updateActivityDto: UpdateActivityDto,
   ): Promise<ApiResponse> {
     const activity = await this.activityService.updateActivity(
@@ -129,7 +139,7 @@ export class ActivityController {
   @UseGuards(JwtAuthGuard)
   async enrollActivity(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ): Promise<ApiResponse> {
     await this.activityService.enrollActivity(id, req.user.id);
     return {
@@ -142,7 +152,7 @@ export class ActivityController {
   @UseGuards(JwtAuthGuard)
   async cancelEnrollment(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ): Promise<ApiResponse> {
     await this.activityService.cancelEnrollment(id, req.user.id);
     return {
@@ -179,7 +189,7 @@ export class ActivityController {
   @UseGuards(JwtAuthGuard)
   async cancelEnrollmentDelete(
     @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ): Promise<ApiResponse> {
     await this.activityService.cancelEnrollment(id, req.user.id);
     return {
