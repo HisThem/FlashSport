@@ -4,6 +4,7 @@ import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
 import { formatDate, getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
 import { enrichActivityWithEnrollmentStatus, isRegistrationExpired } from '../../utils/activity';
+import Avatar from '../Avatar';
 
 interface ActivityDetailModalProps {
   isOpen: boolean;
@@ -212,14 +213,11 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
               <div>
                 <h4 className="font-semibold text-lg mb-2">发起人</h4>
                 <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
-                  <div className="avatar">
-                    <div className="w-12 h-12 rounded-full">
-                      <img 
-                        src={enrichedActivity.organizer.avatar_url || 'https://via.placeholder.com/48?text=头像'} 
-                        alt={enrichedActivity.organizer.username}
-                      />
-                    </div>
-                  </div>
+                  <Avatar 
+                    username={enrichedActivity.organizer.username}
+                    avatarUrl={enrichedActivity.organizer.avatar_url}
+                    size="small"
+                  />
                   <div>
                     <div className="font-medium">{enrichedActivity.organizer.username}</div>
                   </div>
@@ -268,17 +266,14 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
         {/* 参与者列表 */}
         <div className="mb-6">
           <h4 className="font-semibold text-lg mb-3">参与者 ({enrollments.length}人)</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {enrollments.map((enrollment) => (
-              <div key={enrollment.id} className="flex items-center gap-2 p-2 bg-base-200 rounded-lg">
-                <div className="avatar">
-                  <div className="w-8 h-8 rounded-full">
-                    <img 
-                      src={enrollment.user?.avatar_url || 'https://via.placeholder.com/32?text=头像'} 
-                      alt={enrollment.user?.username}
-                    />
-                  </div>
-                </div>
+              <div key={enrollment.id} className="flex flex-col items-center gap-2 p-2 bg-base-200 rounded-lg">
+                <Avatar 
+                  username={enrollment.user?.username || '?'}
+                  avatarUrl={enrollment.user?.avatar_url}
+                  size="tiny"
+                />
                 <span className="text-sm truncate">{enrollment.user?.username}</span>
               </div>
             ))}
@@ -330,14 +325,11 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
             {comments.map((comment) => (
               <div key={comment.id} className="p-3 bg-base-100 border rounded-lg">
                 <div className="flex items-start gap-3">
-                  <div className="avatar">
-                    <div className="w-10 h-10 rounded-full">
-                      <img 
-                        src={comment.user?.avatar_url || 'https://via.placeholder.com/40?text=头像'} 
-                        alt={comment.user?.username}
-                      />
-                    </div>
-                  </div>
+                  <Avatar 
+                    username={comment.user?.username || '?'}
+                    avatarUrl={comment.user?.avatar_url}
+                    size="tiny"
+                  />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium">{comment.user?.username}</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import userAPI, { User } from '../api/user';
 import { useAuthGuard } from '../hooks/useAuth';
+import Avatar from '../components/Avatar';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -210,13 +211,12 @@ const Profile: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-8">
               {/* 用户头像和基本信息 */}
               <div className="text-center">
-                <div className="avatar mb-4">
-                  <div className="w-32 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    <img
-                      src={user.avatar_url || "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"}
-                      alt="用户头像"
-                    />
-                  </div>
+                <div className="mb-4">
+                  <Avatar 
+                    username={user.username}
+                    avatarUrl={user.avatar_url}
+                    size="large"
+                  />
                 </div>
                 <h2 className="text-2xl font-bold">{user.username}</h2>
                 <p className="text-base-content/70">{user.email}</p>

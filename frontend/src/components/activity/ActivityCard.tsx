@@ -1,7 +1,8 @@
-import React from 'react';
+import Avatar from '../Avatar';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
+import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, isRegistrationExpired } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
-import { enrichActivityWithEnrollmentStatus, canUserEnroll, canUserCancelEnrollment, isRegistrationExpired } from '../../utils/activity';
+import React from 'react';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -139,16 +140,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           </div>
           
           {enrichedActivity.organizer && (
-            <div className="flex items-center gap-2">
-              <div className="avatar">
-                <div className="w-6 h-6 rounded-full">
-                  <img 
-                    src={enrichedActivity.organizer.avatar_url || 'https://via.placeholder.com/40?text=头像'} 
-                    alt={enrichedActivity.organizer.username}
-                  />
-                </div>
-              </div>
-              <span className="text-base-content/80">发起人: {enrichedActivity.organizer.username}</span>
+            <div className="flex items-center gap-2 pt-2">
+              <Avatar 
+                username={enrichedActivity.organizer.username} 
+                avatarUrl={enrichedActivity.organizer.avatar_url}
+                size="tiny"
+              />
+              <span className="text-base-content/80">{enrichedActivity.organizer.username}</span>
             </div>
           )}
         </div>

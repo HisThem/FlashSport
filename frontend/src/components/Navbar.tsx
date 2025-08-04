@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import userAPI, { User } from '../api/user';
+import Avatar from './Avatar';
 
 const Navbar: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -135,12 +136,14 @@ const Navbar: React.FC = () => {
         
         {isLoggedIn ? (
           <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
-              <div className="w-10 rounded-full">
-                <img
-                  alt="用户头像"
-                  src={currentUser?.avatar_url || "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"} />
-              </div>
+            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
+              {currentUser && (
+                <Avatar 
+                  username={currentUser.username} 
+                  avatarUrl={currentUser.avatar_url}
+                  size="tiny"
+                />
+              )}
             </div>
             <ul
               tabIndex={0}
