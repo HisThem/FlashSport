@@ -2,3 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 修复页面切换时的滚动条抖动问题 */
+@layer base {
+  html {
+    /* 强制始终显示垂直滚动条，避免因内容高度变化导致的抖动 */
+    overflow-y: scroll;
+  }
+  
+  body {
+    /* 确保最小高度为视窗高度 */
+    min-height: 100vh;
+  }
+  
+  /* 优化滚动条样式 */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--b2));
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--bc) / 0.2);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--bc) / 0.3);
+  }
+}

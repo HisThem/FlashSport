@@ -39,9 +39,9 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <Router>
-        <div className="min-h-screen bg-base-100">
+        <div className="min-h-screen bg-base-100 flex flex-col">
           <Navbar />
-          <main>
+          <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
