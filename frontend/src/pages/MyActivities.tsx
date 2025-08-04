@@ -22,26 +22,28 @@ const MyActivities: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      loadData();
+      loadAllData();
     }
-  }, [currentUser, activeTab]);
+  }, [currentUser]);
 
-  const loadData = async () => {
+  const loadAllData = async () => {
     if (!currentUser) return;
     
     setLoading(true);
     try {
-      if (activeTab === 'published') {
-        const response = await activityAPI.getMyActivities();
-        // 为我发布的活动添加报名状态信息
-        const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
-        setMyActivities(enrichedActivities);
-      } else {
-        const response = await activityAPI.getMyEnrolledActivities();
-        // 为我参与的活动添加报名状态信息
-        const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
-        setEnrolledActivities(enrichedActivities);
-      }
+      // 同时加载两种类型的活动数据
+      const [myActivitiesResponse, enrolledActivitiesResponse] = await Promise.all([
+        activityAPI.getMyActivities(),
+        activityAPI.getMyEnrolledActivities()
+      ]);
+
+      // 为我发布的活动添加报名状态信息
+      const enrichedMyActivities = enrichActivitiesWithEnrollmentStatus(myActivitiesResponse.items);
+      setMyActivities(enrichedMyActivities);
+
+      // 为我参与的活动添加报名状态信息
+      const enrichedEnrolledActivities = enrichActivitiesWithEnrollmentStatus(enrolledActivitiesResponse.items);
+      setEnrolledActivities(enrichedEnrolledActivities);
     } catch (error) {
       console.error('加载活动失败:', error);
       showToast('加载活动失败', 'error');
@@ -71,7 +73,7 @@ const MyActivities: React.FC = () => {
   };
 
   const handleFormSuccess = () => {
-    loadData();
+    loadAllData();
     showToast(editingActivity ? '活动更新成功' : '活动发布成功', 'success');
   };
 
@@ -82,7 +84,7 @@ const MyActivities: React.FC = () => {
 
     try {
       await activityAPI.cancelActivity(activity.id);
-      loadData();
+      loadAllData();
       showToast('活动已取消', 'success');
     } catch (error: any) {
       showToast(error.message || '取消活动失败', 'error');
@@ -92,7 +94,7 @@ const MyActivities: React.FC = () => {
   const handleCancelEnrollment = async (activityId: number) => {
     try {
       await activityAPI.cancelEnrollment(activityId);
-      loadData();
+      loadAllData();
       showToast('取消报名成功', 'success');
     } catch (error: any) {
       showToast(error.message || '取消报名失败', 'error');
