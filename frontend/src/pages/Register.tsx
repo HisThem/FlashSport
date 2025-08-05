@@ -212,20 +212,6 @@ const Register: React.FC = () => {
           <p className="py-6">
             创建您的FlashSport账户，开启精彩的运动体验之旅！
           </p>
-          <div className="stats stats-vertical lg:stats-horizontal shadow">
-            <div className="stat">
-              <div className="stat-title">活跃用户</div>
-              <div className="stat-value text-primary">1.2K+</div>
-            </div>
-            <div className="stat">
-              <div className="stat-title">运动项目</div>
-              <div className="stat-value text-secondary">8+</div>
-            </div>
-            <div className="stat">
-              <div className="stat-title">满意度</div>
-              <div className="stat-value text-accent">98%</div>
-            </div>
-          </div>
         </div>
         
         <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">

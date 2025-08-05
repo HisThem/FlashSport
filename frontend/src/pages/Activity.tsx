@@ -174,11 +174,6 @@ const Activities: React.FC = () => {
     }
   };
 
-  const getCategoryName = (categoryId?: number) => {
-    const category = categories.find(c => c.id === categoryId);
-    return category?.name || '全部活动';
-  };
-
   return (
     <div className="min-h-screen bg-base-100 pt-20">
       <div className="container mx-auto px-4 py-8">
@@ -331,87 +326,6 @@ const Activities: React.FC = () => {
             )}
           </div>
         )}
-
-        {/* 统计信息 */}
-        <div className="mt-16">
-          <div className="stats stats-vertical lg:stats-horizontal shadow w-full">
-            <div className="stat">
-              <div className="stat-figure text-primary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block h-8 w-8 stroke-current">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                </svg>
-              </div>
-              <div className="stat-title">活动分类</div>
-              <div className="stat-value text-primary">{categories.length}+</div>
-              <div className="stat-desc">涵盖主流运动项目</div>
-            </div>
-
-            <div className="stat">
-              <div className="stat-figure text-secondary">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block h-8 w-8 stroke-current">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-              </div>
-              <div className="stat-title">活动总数</div>
-              <div className="stat-value text-secondary">{activities.length}</div>
-              <div className="stat-desc">精彩活动等你参与</div>
-            </div>
-
-            <div className="stat">
-              <div className="stat-figure text-accent">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block h-8 w-8 stroke-current">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
-                </svg>
-              </div>
-              <div className="stat-title">当前分类</div>
-              <div className="stat-value text-accent">{getCategoryName(searchParams.category_id)}</div>
-              <div className="stat-desc">活动分类筛选</div>
-            </div>
-
-            <div className="stat">
-              <div className="stat-figure text-info">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="inline-block h-8 w-8 stroke-current">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-              </div>
-              <div className="stat-title">页面</div>
-              <div className="stat-value text-info">{searchParams.page}/{totalPages}</div>
-              <div className="stat-desc">当前页面/总页数</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 活动详情弹窗 */}
