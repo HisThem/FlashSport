@@ -94,8 +94,6 @@ const Navbar: React.FC = () => {
             <li><Link to="/activities">活动项目</Link></li>
             {isLoggedIn && <li><Link to="/my-activities">我的活动</Link></li>}
             {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin">管理页面</Link></li>}
-            <li><Link to="/events">赛事</Link></li>
-            <li><Link to="/about">关于我们</Link></li>
           </ul>
         </div>
         <Link to="/" className="btn btn-ghost text-xl font-bold text-primary">
@@ -109,8 +107,6 @@ const Navbar: React.FC = () => {
           <li><Link to="/activities" className="btn btn-ghost">活动项目</Link></li>
           {isLoggedIn && <li><Link to="/my-activities" className="btn btn-ghost">我的活动</Link></li>}
           {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin" className="btn btn-ghost">管理页面</Link></li>}
-          <li><Link to="/events" className="btn btn-ghost">赛事</Link></li>
-          <li><Link to="/about" className="btn btn-ghost">关于我们</Link></li>
         </ul>
       </div>
       
@@ -165,7 +161,6 @@ const Navbar: React.FC = () => {
                   我的活动
                 </Link>
               </li>
-              <li><a>设置</a></li>
               <li><a onClick={handleLogout}>登出</a></li>
             </ul>
           </div>
