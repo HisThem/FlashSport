@@ -174,6 +174,11 @@ export class ActivityService {
     const [activities, total] = await queryBuilder.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
 
+    // 批量更新活动状态
+    await Promise.all(
+      activities.map((activity) => this.updateActivityStatusByTime(activity)),
+    );
+
     return {
       items: activities,
       total,
@@ -201,7 +206,51 @@ export class ActivityService {
       throw new NotFoundException('活动不存在');
     }
 
+    // 自动更新活动状态
+    await this.updateActivityStatusByTime(activity);
+
     return activity;
+  }
+
+  /**
+   * 根据时间自动更新活动状态
+   */
+  private async updateActivityStatusByTime(activity: Activity): Promise<void> {
+    // 如果活动已取消，不更新状态
+    if (activity.status === ActivityStatus.CANCELLED) {
+      return;
+    }
+
+    const now = new Date();
+    const registrationDeadline = new Date(activity.registration_deadline);
+    const startTime = new Date(activity.start_time);
+    const endTime = new Date(activity.end_time);
+
+    let newStatus: ActivityStatus | null = null;
+
+    // 根据时间判断状态
+    if (now > endTime) {
+      // 活动结束后
+      newStatus = ActivityStatus.FINISHED;
+    } else if (now >= startTime && now <= endTime) {
+      // 活动进行中
+      newStatus = ActivityStatus.ONGOING;
+    } else if (now > registrationDeadline && now < startTime) {
+      // 报名截止后，活动开始前
+      newStatus = ActivityStatus.REGISTRATION_CLOSED;
+    } else if (
+      now <= registrationDeadline &&
+      activity.status === ActivityStatus.PREPARING
+    ) {
+      // 报名期间，如果当前是筹备中，可能需要手动设置为报名中
+      // 这里不自动设置，保持手动控制
+    }
+
+    // 如果需要更新状态且状态不同，则更新
+    if (newStatus && newStatus !== activity.status) {
+      activity.status = newStatus;
+      await this.activityRepository.save(activity);
+    }
   }
 
   async updateActivity(
@@ -216,12 +265,18 @@ export class ActivityService {
       throw new ForbiddenException('只有活动组织者可以修改活动');
     }
 
-    // 检查活动状态：只有筹备中或报名中的活动可以修改
+    // 检查活动状态：只有筹备中、报名中或报名已截止的活动可以修改
     if (
       activity.status === ActivityStatus.FINISHED ||
-      activity.status === ActivityStatus.CANCELLED
+      activity.status === ActivityStatus.CANCELLED ||
+      activity.status === ActivityStatus.ONGOING
     ) {
-      throw new ForbiddenException('已结束或已取消的活动不能修改');
+      throw new ForbiddenException('进行中、已结束或已取消的活动不能修改');
+    }
+
+    // 检查活动开始时间：活动开始后不能修改活动内容
+    if (new Date() >= activity.start_time) {
+      throw new ForbiddenException('活动开始后不能修改活动内容');
     }
 
     const { image_urls, ...updateData } = updateActivityDto;
@@ -355,6 +410,80 @@ export class ActivityService {
 
     enrollment.status = EnrollmentStatus.CANCELLED;
     await this.enrollmentRepository.save(enrollment);
+  }
+
+  async cancelActivity(activityId: number, userId: number): Promise<void> {
+    const activity = await this.getActivityById(activityId);
+
+    // 检查权限：只有活动组织者可以取消
+    if (activity.organizer_id !== userId) {
+      throw new ForbiddenException('只有活动组织者可以取消活动');
+    }
+
+    // 检查活动状态：只有筹备中、报名中或报名已截止的活动可以取消
+    if (
+      activity.status === ActivityStatus.FINISHED ||
+      activity.status === ActivityStatus.CANCELLED ||
+      activity.status === ActivityStatus.ONGOING
+    ) {
+      throw new BadRequestException('进行中、已结束或已取消的活动无法取消');
+    }
+
+    // 检查活动开始时间：活动开始后不能取消活动
+    if (new Date() >= activity.start_time) {
+      throw new ForbiddenException('活动开始后不能取消活动');
+    }
+
+    // 更新活动状态为已取消
+    activity.status = ActivityStatus.CANCELLED;
+    await this.activityRepository.save(activity);
+
+    // 取消所有已报名用户的报名
+    await this.enrollmentRepository.update(
+      {
+        activity_id: activityId,
+        status: EnrollmentStatus.ENROLLED,
+      },
+      {
+        status: EnrollmentStatus.CANCELLED,
+      },
+    );
+  }
+
+  async updateActivityStatus(
+    activityId: number,
+    userId: number,
+    status: string,
+  ): Promise<void> {
+    const activity = await this.getActivityById(activityId);
+
+    // 检查权限：只有活动组织者可以更改状态
+    if (activity.organizer_id !== userId) {
+      throw new ForbiddenException('只有活动组织者可以更改活动状态');
+    }
+
+    // 验证状态值
+    if (!Object.values(ActivityStatus).includes(status as ActivityStatus)) {
+      throw new BadRequestException('无效的活动状态');
+    }
+
+    // 检查活动结束时间：活动结束后不能更改状态
+    if (new Date() > activity.end_time) {
+      throw new ForbiddenException('活动结束后不能更改活动状态');
+    }
+
+    // 状态转换逻辑检查
+    const currentStatus = activity.status;
+    const newStatus = status as ActivityStatus;
+
+    // 已取消的活动不能改变状态
+    if (currentStatus === ActivityStatus.CANCELLED) {
+      throw new BadRequestException('已取消的活动不能更改状态');
+    }
+
+    // 更新状态
+    activity.status = newStatus;
+    await this.activityRepository.save(activity);
   }
 
   async addComment(

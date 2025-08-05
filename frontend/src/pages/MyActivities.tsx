@@ -78,7 +78,26 @@ const MyActivities: React.FC = () => {
   };
 
   const handleCancelActivity = async (activity: Activity) => {
-    if (!confirm('确定要取消这个活动吗？取消后无法恢复。')) {
+    // 检查是否可以取消活动
+    const now = new Date();
+    const startTime = new Date(activity.start_time);
+    
+    if (now >= startTime) {
+      showToast('活动开始后不能取消活动', 'error');
+      return;
+    }
+
+    if (activity.status === 'cancelled') {
+      showToast('活动已经取消了', 'error');
+      return;
+    }
+
+    if (activity.status === 'finished') {
+      showToast('已结束的活动不能取消', 'error');
+      return;
+    }
+
+    if (!confirm('确定要取消这个活动吗？取消后无法恢复，所有已报名用户的报名也会被取消。')) {
       return;
     }
 
@@ -89,6 +108,75 @@ const MyActivities: React.FC = () => {
     } catch (error: any) {
       showToast(error.message || '取消活动失败', 'error');
     }
+  };
+
+  const handleUpdateActivityStatus = async (activity: Activity, newStatus: string) => {
+    // 检查是否可以更改状态
+    const now = new Date();
+    const endTime = new Date(activity.end_time);
+    
+    if (now > endTime) {
+      showToast('活动结束后不能更改活动状态', 'error');
+      return;
+    }
+
+    if (activity.status === 'cancelled') {
+      showToast('已取消的活动不能更改状态', 'error');
+      return;
+    }
+
+    try {
+      await activityAPI.updateActivityStatus(activity.id, newStatus as any);
+      loadAllData();
+      showToast('活动状态更新成功', 'success');
+    } catch (error: any) {
+      showToast(error.message || '更新活动状态失败', 'error');
+    }
+  };
+
+  const canEditActivity = (activity: Activity) => {
+    const now = new Date();
+    const startTime = new Date(activity.start_time);
+    
+    // 活动开始后不能编辑
+    if (now >= startTime) {
+      return false;
+    }
+    
+    // 已取消或已结束的活动不能编辑
+    if (activity.status === 'cancelled' || activity.status === 'finished') {
+      return false;
+    }
+    
+    return true;
+  };
+
+  const canCancelActivity = (activity: Activity) => {
+    const now = new Date();
+    const startTime = new Date(activity.start_time);
+    
+    // 活动开始后不能取消
+    if (now >= startTime) {
+      return false;
+    }
+    
+    // 只有筹备中、报名中或报名已截止的活动可以取消
+    return activity.status === 'preparing' || 
+           activity.status === 'recruiting' || 
+           activity.status === 'registration_closed';
+  };
+
+  const canChangeStatus = (activity: Activity) => {
+    const now = new Date();
+    const endTime = new Date(activity.end_time);
+    
+    // 活动结束后不能更改状态
+    if (now > endTime) {
+      return false;
+    }
+    
+    // 已取消的活动不能更改状态
+    return activity.status !== 'cancelled';
   };
 
   const handleCancelEnrollment = async (activityId: number) => {
@@ -176,30 +264,20 @@ const MyActivities: React.FC = () => {
         ) : currentActivities.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentActivities.map(activity => (
-              <div key={activity.id} className="relative">
+              <div key={activity.id}>
                 <ActivityCard
                   activity={activity}
                   onViewDetail={handleViewDetail}
                   onEdit={activeTab === 'published' ? handleEditActivity : undefined}
                   onCancelEnrollment={activeTab === 'enrolled' ? handleCancelEnrollment : undefined}
+                  onCancelActivity={activeTab === 'published' ? handleCancelActivity : undefined}
+                  onUpdateActivityStatus={activeTab === 'published' ? handleUpdateActivityStatus : undefined}
                   isOwner={activeTab === 'published'}
                   showActions={true}
+                  canEditActivity={canEditActivity}
+                  canCancelActivity={canCancelActivity}
+                  canChangeStatus={canChangeStatus}
                 />
-                
-                {/* 额外的管理按钮 */}
-                {activeTab === 'published' && (
-                  <div className="absolute top-2 right-2 space-x-1">
-                    {activity.status === 'recruiting' && (
-                      <button
-                        className="btn btn-error btn-xs"
-                        onClick={() => handleCancelActivity(activity)}
-                        title="取消活动"
-                      >
-                        取消
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
           </div>

@@ -4,7 +4,6 @@ import activityAPI from '../api/activity';
 import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
-import ActivityFormModal from '../components/activity/ActivityFormModal';
 import SimpleToast from '../components/SimpleToast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
@@ -14,8 +13,6 @@ const Activities: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
   
@@ -101,25 +98,6 @@ const Activities: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
-  const handleCreateActivity = () => {
-    if (!currentUser) {
-      showToast('请先登录', 'error');
-      return;
-    }
-    setEditingActivity(null);
-    setIsFormModalOpen(true);
-  };
-
-  const handleEditActivity = (activity: Activity) => {
-    setEditingActivity(activity);
-    setIsFormModalOpen(true);
-  };
-
-  const handleFormSuccess = () => {
-    loadActivities();
-    showToast(editingActivity ? '活动更新成功' : '活动发布成功', 'success');
-  };
-
   const handleEnroll = async (activityId: number) => {
     if (!currentUser) {
       showToast('请先登录', 'error');
@@ -202,8 +180,8 @@ const Activities: React.FC = () => {
             ))}
           </div>
 
-          {/* 排序和发布按钮 */}
-          <div className="flex justify-between items-center">
+          {/* 排序 */}
+          <div className="flex justify-start items-center">
             <select
               className="select select-bordered select-sm"
               value={searchParams.sort}
@@ -214,15 +192,6 @@ const Activities: React.FC = () => {
               <option value="start_time">按开始时间</option>
               <option value="participants">按参与人数</option>
             </select>
-
-            {currentUser && (
-              <button 
-                className="btn btn-primary btn-sm"
-                onClick={handleCreateActivity}
-              >
-                发布活动
-              </button>
-            )}
           </div>
         </div>
 
@@ -241,7 +210,6 @@ const Activities: React.FC = () => {
                   onViewDetail={handleViewDetail}
                   onEnroll={handleEnroll}
                   onCancelEnrollment={handleCancelEnrollment}
-                  onEdit={handleEditActivity}
                   isOwner={currentUser?.id === activity.organizer_id}
                 />
               ))}
@@ -294,14 +262,6 @@ const Activities: React.FC = () => {
                 ? '没有找到符合条件的活动' 
                 : '还没有人发布活动'}
             </p>
-            {currentUser && (
-              <button 
-                className="btn btn-primary"
-                onClick={handleCreateActivity}
-              >
-                发布第一个活动
-              </button>
-            )}
           </div>
         )}
 
@@ -397,18 +357,6 @@ const Activities: React.FC = () => {
         }}
         onEnroll={handleEnroll}
         onCancelEnrollment={handleCancelEnrollment}
-        onEdit={handleEditActivity}
-      />
-
-      {/* 活动表单弹窗 */}
-      <ActivityFormModal
-        isOpen={isFormModalOpen}
-        activity={editingActivity}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setEditingActivity(null);
-        }}
-        onSuccess={handleFormSuccess}
       />
 
       {/* Toast 提示 */}

@@ -17,6 +17,8 @@ import { ActivityImage } from './activity-image.entity';
 export enum ActivityStatus {
   PREPARING = 'preparing',
   RECRUITING = 'recruiting',
+  REGISTRATION_CLOSED = 'registration_closed',
+  ONGOING = 'ongoing',
   FINISHED = 'finished',
   CANCELLED = 'cancelled',
 }

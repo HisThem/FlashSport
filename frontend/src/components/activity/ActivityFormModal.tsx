@@ -37,6 +37,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   });
 
   const isEditMode = !!activity;
+  const isRegistrationExpired = activity && new Date() > new Date(activity.registration_deadline);
 
   useEffect(() => {
     if (isOpen) {
@@ -254,8 +255,27 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           {isEditMode ? '编辑活动' : '发布新活动'}
         </h3>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* 基本信息 */}
+        {/* 报名截止时间警告 */}
+        {isEditMode && isRegistrationExpired && (
+          <div className="alert alert-warning mb-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 shrink-0 stroke-current"
+              fill="none"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span>
+              <strong>注意：</strong>该活动报名时间已截止，无法修改活动内容。
+            </span>
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="space-y-6">{/* 基本信息 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">
@@ -506,7 +526,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             <button
               type="submit"
               className={`btn btn-primary ${loading ? 'loading' : ''}`}
-              disabled={loading}
+              disabled={loading || (isEditMode && !!isRegistrationExpired)}
             >
               {loading ? '保存中...' : (isEditMode ? '更新活动' : '发布活动')}
             </button>

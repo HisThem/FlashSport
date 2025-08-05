@@ -55,9 +55,13 @@ export function canUserEnroll(activity: Activity): boolean {
   // 确保活动有报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
   
+  // 只有在报名中状态且未超过报名截止时间才能报名
+  const now = new Date();
+  const registrationDeadline = new Date(enrichedActivity.registration_deadline);
+  
   return (
     enrichedActivity.status === 'recruiting' &&
-    !isRegistrationExpired(enrichedActivity.registration_deadline) &&
+    now <= registrationDeadline &&
     (enrichedActivity.enrollment_count || 0) < enrichedActivity.max_participants &&
     !(enrichedActivity.is_enrolled || false)
   );
@@ -78,10 +82,15 @@ export function canUserCancelEnrollment(activity: Activity): boolean {
   // 确保活动有报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
   
+  // 在活动开始前都可以取消报名
+  const now = new Date();
+  const startTime = new Date(enrichedActivity.start_time);
+  
   return (
     (enrichedActivity.is_enrolled || false) &&
-    enrichedActivity.status === 'recruiting' &&
-    !isRegistrationExpired(enrichedActivity.registration_deadline)
+    now < startTime &&
+    enrichedActivity.status !== 'cancelled' &&
+    enrichedActivity.status !== 'finished'
   );
 }
 

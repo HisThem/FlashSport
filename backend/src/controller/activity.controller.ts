@@ -197,4 +197,35 @@ export class ActivityController {
       message: '取消报名成功',
     };
   }
+
+  @Post(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelActivity(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<ApiResponse> {
+    await this.activityService.cancelActivity(id, req.user.id);
+    return {
+      success: true,
+      message: '活动已取消',
+    };
+  }
+
+  @Post(':id/status')
+  @UseGuards(JwtAuthGuard)
+  async updateActivityStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+    @Body() body: { status: string },
+  ): Promise<ApiResponse> {
+    await this.activityService.updateActivityStatus(
+      id,
+      req.user.id,
+      body.status,
+    );
+    return {
+      success: true,
+      message: '活动状态更新成功',
+    };
+  }
 }
