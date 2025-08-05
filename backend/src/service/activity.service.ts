@@ -673,4 +673,148 @@ export class ActivityService {
       order: { create_time: 'DESC' },
     });
   }
+
+  // 管理员方法
+  async getAllActivitiesForAdmin(queryDto: ActivityQueryDto): Promise<{
+    items: Activity[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const {
+      page = 1,
+      limit = 10,
+      keyword,
+      category_id,
+      status,
+      sort = 'newest',
+    } = queryDto;
+
+    let query = this.activityRepository
+      .createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.category', 'category')
+      .leftJoinAndSelect('activity.organizer', 'organizer')
+      .leftJoinAndSelect('activity.images', 'images');
+
+    // 搜索条件
+    if (keyword) {
+      query = query.where(
+        'activity.title LIKE :keyword OR activity.description LIKE :keyword',
+        { keyword: `%${keyword}%` },
+      );
+    }
+
+    // 分类筛选
+    if (category_id) {
+      query = query.andWhere('activity.category_id = :category_id', {
+        category_id,
+      });
+    }
+
+    // 状态筛选
+    if (status) {
+      query = query.andWhere('activity.status = :status', { status });
+    }
+
+    // 排序
+    if (sort === 'newest') {
+      query = query.orderBy('activity.created_at', 'DESC');
+    } else if (sort === 'oldest') {
+      query = query.orderBy('activity.created_at', 'ASC');
+    } else if (sort === 'start_time') {
+      query = query.orderBy('activity.start_time', 'ASC');
+    } else if (sort === 'participants') {
+      // 这里需要添加子查询来计算参与者数量
+      query = query
+        .leftJoin(
+          'enrollments',
+          'enrollment',
+          'enrollment.activity_id = activity.id AND enrollment.status = :enrolledStatus',
+          { enrolledStatus: 'enrolled' },
+        )
+        .addSelect('COUNT(enrollment.id)', 'participant_count')
+        .groupBy('activity.id')
+        .orderBy('participant_count', 'DESC');
+    }
+
+    // 分页
+    const total = await query.getCount();
+    const activities = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: activities,
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
+
+  async deleteActivity(activityId: number): Promise<void> {
+    // 验证管理员权限（这里假设已在控制器层验证）
+    const activity = await this.activityRepository.findOne({
+      where: { id: activityId },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    // 删除相关的报名记录
+    await this.enrollmentRepository.delete({ activity_id: activityId });
+
+    // 删除相关的评论
+    await this.commentRepository.delete({ activity_id: activityId });
+
+    // 删除相关的图片记录
+    await this.activityImageRepository.delete({ activity_id: activityId });
+
+    // 删除活动
+    await this.activityRepository.delete(activityId);
+  }
+
+  async updateActivityStatusAsAdmin(
+    activityId: number,
+    status: ActivityStatus,
+  ): Promise<void> {
+    const activity = await this.activityRepository.findOne({
+      where: { id: activityId },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    activity.status = status;
+    await this.activityRepository.save(activity);
+  }
+
+  async cancelActivityAsAdmin(activityId: number): Promise<void> {
+    const activity = await this.activityRepository.findOne({
+      where: { id: activityId },
+    });
+
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    if (activity.status === ActivityStatus.FINISHED) {
+      throw new BadRequestException('已结束的活动无法取消');
+    }
+
+    activity.status = ActivityStatus.CANCELLED;
+    await this.activityRepository.save(activity);
+
+    // 取消所有相关的报名
+    await this.enrollmentRepository.update(
+      { activity_id: activityId, status: EnrollmentStatus.ENROLLED },
+      { status: EnrollmentStatus.CANCELLED },
+    );
+  }
 }

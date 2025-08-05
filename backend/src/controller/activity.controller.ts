@@ -10,6 +10,7 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivityService } from '../service/activity.service';
@@ -19,11 +20,13 @@ import {
   ActivityQueryDto,
 } from '../dto/activity.dto';
 import { ApiResponse } from '../dto/response.dto';
+import { ActivityStatus } from '../entities/activity.entity';
 
 interface AuthenticatedRequest extends Request {
   user: {
     id: number;
     username: string;
+    role?: string;
   };
 }
 
@@ -227,6 +230,82 @@ export class ActivityController {
       req.user.id,
       body.status,
     );
+    return {
+      success: true,
+      message: '活动状态更新成功',
+    };
+  }
+
+  // 管理员接口
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard)
+  async getAllActivitiesForAdmin(
+    @Request() req: AuthenticatedRequest,
+    @Query() queryDto: ActivityQueryDto,
+  ): Promise<ApiResponse> {
+    // 验证管理员权限
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('只有管理员可以访问此接口');
+    }
+
+    const result =
+      await this.activityService.getAllActivitiesForAdmin(queryDto);
+    return {
+      success: true,
+      message: '获取所有活动成功',
+      data: result,
+    };
+  }
+
+  @Delete('admin/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteActivityAsAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<ApiResponse> {
+    // 验证管理员权限
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('只有管理员可以删除活动');
+    }
+
+    await this.activityService.deleteActivity(id);
+    return {
+      success: true,
+      message: '活动删除成功',
+    };
+  }
+
+  @Post('admin/:id/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelActivityAsAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<ApiResponse> {
+    // 验证管理员权限
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('只有管理员可以取消活动');
+    }
+
+    await this.activityService.cancelActivityAsAdmin(id);
+    return {
+      success: true,
+      message: '活动已取消',
+    };
+  }
+
+  @Post('admin/:id/status')
+  @UseGuards(JwtAuthGuard)
+  async updateActivityStatusAsAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+    @Body() body: { status: ActivityStatus },
+  ): Promise<ApiResponse> {
+    // 验证管理员权限
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('只有管理员可以更新活动状态');
+    }
+
+    await this.activityService.updateActivityStatusAsAdmin(id, body.status);
     return {
       success: true,
       message: '活动状态更新成功',

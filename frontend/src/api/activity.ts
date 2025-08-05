@@ -402,6 +402,82 @@ class ActivityAPI {
     
     throw new Error(response.message || '获取我的报名活动失败');
   }
+
+  /**
+   * 删除活动 (管理员权限)
+   * @param activityId 活动ID
+   */
+  async deleteActivity(activityId: number): Promise<void> {
+    const response: ApiResponse = await request.delete(`${ACTIVITY_MODULE}/${activityId}`);
+    
+    if (!response.success) {
+      throw new Error(response.message || '删除活动失败');
+    }
+  }
+
+  /**
+   * 管理员获取所有活动（包含已删除等状态）
+   * @param params 查询参数
+   */
+  async getAllActivitiesForAdmin(params: GetActivitiesRequest = {}): Promise<PaginatedResponse<Activity>> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+    if (params.category_id) queryParams.append('category_id', params.category_id.toString());
+    if (params.keyword) queryParams.append('keyword', params.keyword);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.sort) queryParams.append('sort', params.sort);
+
+    const queryString = queryParams.toString();
+    const url = queryString ? `${ACTIVITY_MODULE}/admin/all?${queryString}` : `${ACTIVITY_MODULE}/admin/all`;
+    
+    const response: ApiResponse<PaginatedResponse<Activity>> = await request.get(url);
+    
+    if (response.success && response.data) {
+      return response.data;
+    }
+    
+    throw new Error(response.message || '获取活动列表失败');
+  }
+
+  /**
+   * 管理员删除活动
+   * @param id 活动ID
+   */
+  async deleteActivityAsAdmin(id: number): Promise<void> {
+    const response: ApiResponse = await request.delete(`${ACTIVITY_MODULE}/admin/${id}`);
+    
+    if (!response.success) {
+      throw new Error(response.message || '删除活动失败');
+    }
+  }
+
+  /**
+   * 管理员取消活动
+   * @param id 活动ID
+   */
+  async cancelActivityAsAdmin(id: number): Promise<void> {
+    const response: ApiResponse = await request.post(`${ACTIVITY_MODULE}/admin/${id}/cancel`);
+    
+    if (!response.success) {
+      throw new Error(response.message || '取消活动失败');
+    }
+  }
+
+  /**
+   * 管理员更新活动状态
+   * @param id 活动ID
+   * @param status 新状态
+   */
+  async updateActivityStatusAsAdmin(id: number, status: ActivityStatus): Promise<void> {
+    const response: ApiResponse = await request.post(`${ACTIVITY_MODULE}/admin/${id}/status`, {
+      status
+    });
+    
+    if (!response.success) {
+      throw new Error(response.message || '更新活动状态失败');
+    }
+  }
 }
 
 // 创建并导出活动API实例
