@@ -28,6 +28,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [commentLoading, setCommentLoading] = useState(false);
   const [newComment, setNewComment] = useState({ rating: 5, content: '' });
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
 
   useEffect(() => {
@@ -122,6 +123,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   };
 
   return (
+    <>
     <div className="modal modal-open">
       <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
@@ -263,6 +265,59 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
           </div>
         </div>
 
+        {/* 活动照片 */}
+        {(enrichedActivity.cover_image_url || (enrichedActivity.images && enrichedActivity.images.length > 0)) && (
+          <div className="mb-6">
+            <h4 className="font-semibold text-lg mb-3">活动照片</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {/* 封面图片 */}
+              {enrichedActivity.cover_image_url && (
+                <div className="relative cursor-pointer overflow-hidden rounded-lg">
+                  <img 
+                    src={enrichedActivity.cover_image_url} 
+                    alt="活动封面"
+                    className="w-full h-48 object-cover shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                    onClick={() => setPreviewImage(enrichedActivity.cover_image_url || '')}
+                  />
+                  <div className="absolute top-2 left-2 bg-primary text-primary-content text-xs px-2 py-1 rounded">
+                    封面
+                  </div>
+                </div>
+              )}
+              
+              {/* 其他活动图片 */}
+              {enrichedActivity.images?.map((image, index) => (
+                <div key={image.id} className="relative cursor-pointer overflow-hidden rounded-lg">
+                  <img 
+                    src={image.image_url} 
+                    alt={`活动照片 ${index + 1}`}
+                    className="w-full h-48 object-cover shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                    onClick={() => setPreviewImage(image.image_url)}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {/* 没有照片时的提示 */}
+            {!enrichedActivity.cover_image_url && (!enrichedActivity.images || enrichedActivity.images.length === 0) && (
+              <div className="text-center py-8 text-base-content/60">
+                <svg className="w-16 h-16 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p>暂无活动照片</p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 参与者列表 */}
         <div className="mb-6">
           <h4 className="font-semibold text-lg mb-3">参与者 ({enrollments.length}人)</h4>
@@ -360,6 +415,35 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
       </div>
       <div className="modal-backdrop" onClick={onClose}></div>
     </div>
+
+    {/* 图片预览模态框 */}
+    {previewImage && (
+      <div className="modal modal-open">
+        <div className="modal-box max-w-4xl p-0 bg-transparent shadow-none">
+          <div className="relative">
+            <img 
+              src={previewImage} 
+              alt="活动照片预览"
+              className="w-full max-h-[80vh] object-contain rounded-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+            <button 
+              className="btn btn-circle btn-sm absolute top-2 right-2 bg-black/50 border-none text-white hover:bg-black/70"
+              onClick={() => setPreviewImage(null)}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className="modal-backdrop bg-black/80" onClick={() => setPreviewImage(null)}></div>
+      </div>
+    )}
+    </>
   );
 };
 
