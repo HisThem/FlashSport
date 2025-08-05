@@ -103,8 +103,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   };
 
   return (
-    <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300">
-      <figure className="relative">
+    <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
+      <figure className="relative flex-shrink-0">
         <img 
           src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
           alt={enrichedActivity.name}
@@ -118,7 +118,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
       </figure>
       
-      <div className="card-body">
+      <div className="card-body flex-1 flex flex-col">
         <h2 className="card-title">
           {enrichedActivity.name}
           {(enrichedActivity.is_enrolled || false) && (
@@ -126,11 +126,16 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           )}
         </h2>
         
-        <p className="text-sm text-base-content/70 line-clamp-2">
+        <p className="text-sm text-base-content/70 mb-4 overflow-hidden" style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          maxHeight: '3rem'
+        }}>
           {enrichedActivity.description}
         </p>
         
-        <div className="space-y-2 text-sm">
+        <div className="space-y-2 text-sm flex-1">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -179,7 +184,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
         
         {showActions && (
-          <div className="card-actions justify-end mt-4">
+          <div className="card-actions justify-end mt-auto pt-4">
             <button 
               className="btn btn-outline btn-sm"
               onClick={() => onViewDetail(enrichedActivity)}
