@@ -11,6 +11,7 @@ const Activities: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -31,7 +32,14 @@ const Activities: React.FC = () => {
 
   useEffect(() => {
     loadCategories();
-    loadActivities();
+    loadActivities(true); // 首次加载
+  }, []);
+
+  // 监听搜索参数变化，但不包括首次加载
+  useEffect(() => {
+    if (!loading) { // 跳过首次加载
+      loadActivities(false); // 后续加载不显示全局loading
+    }
   }, [searchParams]);
 
   const loadCategories = async () => {
@@ -44,8 +52,13 @@ const Activities: React.FC = () => {
     }
   };
 
-  const loadActivities = async () => {
-    setLoading(true);
+  const loadActivities = async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setLoading(true);
+    } else {
+      setActivitiesLoading(true);
+    }
+    
     try {
       const response = await activityAPI.getActivities(searchParams);
       // 为活动列表添加报名状态信息
@@ -56,7 +69,11 @@ const Activities: React.FC = () => {
       console.error('加载活动失败:', error);
       showToast('加载活动失败', 'error');
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setActivitiesLoading(false);
+      }
     }
   };
 
@@ -81,6 +98,19 @@ const Activities: React.FC = () => {
     }));
   };
 
+  // 添加防抖搜索
+  const handleSearchInputChange = (value: string) => {
+    setSearchKeyword(value);
+    // 如果输入为空，立即搜索
+    if (value === '') {
+      setSearchParams(prev => ({
+        ...prev,
+        keyword: '',
+        page: 1
+      }));
+    }
+  };
+
   const handleSortChange = (sort: string) => {
     setSearchParams(prev => ({
       ...prev,
@@ -98,6 +128,27 @@ const Activities: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
+  const updateActivityData = async (activityId: number) => {
+    try {
+      const updatedActivity = await activityAPI.getActivityById(activityId);
+      const enrichedActivities = await enrichActivitiesWithEnrollmentStatus([updatedActivity]);
+      const enrichedActivity = enrichedActivities[0];
+      
+      setActivities(prevActivities => 
+        prevActivities.map(activity => 
+          activity.id === activityId ? enrichedActivity : activity
+        )
+      );
+      
+      // 如果详情模态框正在显示这个活动，也更新它
+      if (selectedActivity && selectedActivity.id === activityId) {
+        setSelectedActivity(enrichedActivity);
+      }
+    } catch (error) {
+      console.error('更新活动数据失败:', error);
+    }
+  };
+
   const handleEnroll = async (activityId: number) => {
     if (!currentUser) {
       showToast('请先登录', 'error');
@@ -106,7 +157,7 @@ const Activities: React.FC = () => {
 
     try {
       await activityAPI.enrollActivity(activityId);
-      loadActivities();
+      await updateActivityData(activityId);
       showToast('报名成功', 'success');
     } catch (error: any) {
       showToast(error.message || '报名失败', 'error');
@@ -116,7 +167,7 @@ const Activities: React.FC = () => {
   const handleCancelEnrollment = async (activityId: number) => {
     try {
       await activityAPI.cancelEnrollment(activityId);
-      loadActivities();
+      await updateActivityData(activityId);
       showToast('取消报名成功', 'success');
     } catch (error: any) {
       showToast(error.message || '取消报名失败', 'error');
@@ -150,12 +201,13 @@ const Activities: React.FC = () => {
               placeholder="搜索活动名称或描述..."
               className="input input-bordered flex-1"
               value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
+              onChange={(e) => handleSearchInputChange(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
             <button 
               className="btn btn-primary"
               onClick={handleSearch}
+              disabled={activitiesLoading}
             >
               搜索
             </button>
@@ -166,6 +218,7 @@ const Activities: React.FC = () => {
             <button 
               className={`btn btn-sm ${!searchParams.category_id ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => handleCategoryFilter(undefined)}
+              disabled={activitiesLoading}
             >
               全部活动
             </button>
@@ -174,6 +227,7 @@ const Activities: React.FC = () => {
                 key={category.id}
                 className={`btn btn-sm ${searchParams.category_id === category.id ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => handleCategoryFilter(category.id)}
+                disabled={activitiesLoading}
               >
                 {category.name}
               </button>
@@ -186,6 +240,7 @@ const Activities: React.FC = () => {
               className="select select-bordered select-sm"
               value={searchParams.sort}
               onChange={(e) => handleSortChange(e.target.value)}
+              disabled={activitiesLoading}
             >
               <option value="newest">最新发布</option>
               <option value="oldest">最早发布</option>
@@ -200,68 +255,80 @@ const Activities: React.FC = () => {
           <div className="flex justify-center items-center py-12">
             <div className="loading loading-spinner loading-lg"></div>
           </div>
-        ) : activities.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {activities.map(activity => (
-                <ActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  onViewDetail={handleViewDetail}
-                  onEnroll={handleEnroll}
-                  onCancelEnrollment={handleCancelEnrollment}
-                  isOwner={currentUser?.id === activity.organizer_id}
-                />
-              ))}
-            </div>
-
-            {/* 分页 */}
-            {totalPages > 1 && (
-              <div className="flex justify-center">
-                <div className="join">
-                  <button 
-                    className="join-item btn"
-                    disabled={searchParams.page === 1}
-                    onClick={() => handlePageChange((searchParams.page || 1) - 1)}
-                  >
-                    «
-                  </button>
-                  
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const page = i + 1;
-                    return (
-                      <button
-                        key={page}
-                        className={`join-item btn ${searchParams.page === page ? 'btn-active' : ''}`}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                  
-                  <button 
-                    className="join-item btn"
-                    disabled={searchParams.page === totalPages}
-                    onClick={() => handlePageChange((searchParams.page || 1) + 1)}
-                  >
-                    »
-                  </button>
-                </div>
+        ) : (
+          <div className="relative">
+            {/* 局部加载遮罩 */}
+            {activitiesLoading && (
+              <div className="absolute inset-0 bg-base-100/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="loading loading-spinner loading-lg"></div>
               </div>
             )}
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🏃‍♂️</div>
-            <h3 className="text-xl font-semibold text-base-content/80 mb-2">
-              暂无活动
-            </h3>
-            <p className="text-base-content/60 mb-4">
-              {searchParams.keyword || searchParams.category_id 
-                ? '没有找到符合条件的活动' 
-                : '还没有人发布活动'}
-            </p>
+            
+            {activities.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {activities.map(activity => (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      onViewDetail={handleViewDetail}
+                      onEnroll={handleEnroll}
+                      onCancelEnrollment={handleCancelEnrollment}
+                      isOwner={currentUser?.id === activity.organizer_id}
+                    />
+                  ))}
+                </div>
+
+                {/* 分页 */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center">
+                    <div className="join">
+                      <button 
+                        className="join-item btn"
+                        disabled={searchParams.page === 1 || activitiesLoading}
+                        onClick={() => handlePageChange((searchParams.page || 1) - 1)}
+                      >
+                        «
+                      </button>
+                      
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const page = i + 1;
+                        return (
+                          <button
+                            key={page}
+                            className={`join-item btn ${searchParams.page === page ? 'btn-active' : ''}`}
+                            disabled={activitiesLoading}
+                            onClick={() => handlePageChange(page)}
+                          >
+                            {page}
+                          </button>
+                        );
+                      })}
+                      
+                      <button 
+                        className="join-item btn"
+                        disabled={searchParams.page === totalPages || activitiesLoading}
+                        onClick={() => handlePageChange((searchParams.page || 1) + 1)}
+                      >
+                        »
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🏃‍♂️</div>
+                <h3 className="text-xl font-semibold text-base-content/80 mb-2">
+                  暂无活动
+                </h3>
+                <p className="text-base-content/60 mb-4">
+                  {searchParams.keyword || searchParams.category_id 
+                    ? '没有找到符合条件的活动' 
+                    : '目前还没有发布任何活动'}
+                </p>
+              </div>
+            )}
           </div>
         )}
 

@@ -73,16 +73,22 @@ const MyActivities: React.FC = () => {
   };
 
   const handleFormSuccess = () => {
-    loadAllData();
-    showToast(editingActivity ? '活动更新成功' : '活动发布成功', 'success');
+    if (editingActivity) {
+      // 如果是编辑现有活动，只更新单个活动数据
+      updateSingleActivityData(editingActivity.id);
+      showToast('活动更新成功', 'success');
+    } else {
+      // 如果是新增活动，需要重新加载所有数据
+      loadAllData();
+      showToast('活动发布成功', 'success');
+    }
   };
 
   const handleCancelActivity = async (activity: Activity) => {
-    // 检查是否可以取消活动
-    const now = new Date();
-    const startTime = new Date(activity.start_time);
-    
-    if (now >= startTime) {
+    const currentTime = new Date();
+    const activityStartTime = new Date(activity.start_time);
+
+    if (currentTime > activityStartTime) {
       showToast('活动开始后不能取消活动', 'error');
       return;
     }
@@ -103,7 +109,7 @@ const MyActivities: React.FC = () => {
 
     try {
       await activityAPI.cancelActivity(activity.id);
-      loadAllData();
+      await updateSingleActivityData(activity.id);
       showToast('活动已取消', 'success');
     } catch (error: any) {
       showToast(error.message || '取消活动失败', 'error');
@@ -127,7 +133,7 @@ const MyActivities: React.FC = () => {
 
     try {
       await activityAPI.updateActivityStatus(activity.id, newStatus as any);
-      loadAllData();
+      await updateSingleActivityData(activity.id);
       showToast('活动状态更新成功', 'success');
     } catch (error: any) {
       showToast(error.message || '更新活动状态失败', 'error');
@@ -179,10 +185,39 @@ const MyActivities: React.FC = () => {
     return activity.status !== 'cancelled';
   };
 
+  const updateSingleActivityData = async (activityId: number) => {
+    try {
+      const updatedActivity = await activityAPI.getActivityById(activityId);
+      const enrichedActivities = await enrichActivitiesWithEnrollmentStatus([updatedActivity]);
+      const enrichedActivity = enrichedActivities[0];
+      
+      // 更新"我发布的活动"列表中的数据
+      setMyActivities(prevActivities => 
+        prevActivities.map(activity => 
+          activity.id === activityId ? enrichedActivity : activity
+        )
+      );
+      
+      // 更新"我参与的活动"列表中的数据
+      setEnrolledActivities(prevActivities => 
+        prevActivities.map(activity => 
+          activity.id === activityId ? enrichedActivity : activity
+        )
+      );
+      
+      // 如果详情模态框正在显示这个活动，也更新它
+      if (selectedActivity && selectedActivity.id === activityId) {
+        setSelectedActivity(enrichedActivity);
+      }
+    } catch (error) {
+      console.error('更新活动数据失败:', error);
+    }
+  };
+
   const handleCancelEnrollment = async (activityId: number) => {
     try {
       await activityAPI.cancelEnrollment(activityId);
-      loadAllData();
+      await updateSingleActivityData(activityId);
       showToast('取消报名成功', 'success');
     } catch (error: any) {
       showToast(error.message || '取消报名失败', 'error');

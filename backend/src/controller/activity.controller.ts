@@ -141,10 +141,14 @@ export class ActivityController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: AuthenticatedRequest,
   ): Promise<ApiResponse> {
-    await this.activityService.enrollActivity(id, req.user.id);
+    const enrollment = await this.activityService.enrollActivity(
+      id,
+      req.user.id,
+    );
     return {
       success: true,
       message: '报名成功',
+      data: enrollment,
     };
   }
 

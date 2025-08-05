@@ -348,7 +348,10 @@ export class ActivityService {
     return this.getActivityById(id);
   }
 
-  async enrollActivity(activityId: number, userId: number): Promise<void> {
+  async enrollActivity(
+    activityId: number,
+    userId: number,
+  ): Promise<Enrollment> {
     const activity = await this.getActivityById(activityId);
 
     // 检查活动状态
@@ -361,7 +364,7 @@ export class ActivityService {
       throw new BadRequestException('报名时间已截止');
     }
 
-    // 检查是否已报名
+    // 检查是否已报名（活跃状态）
     const existingEnrollment = await this.enrollmentRepository.findOne({
       where: {
         activity_id: activityId,
@@ -374,25 +377,53 @@ export class ActivityService {
       throw new ConflictException('您已报名该活动');
     }
 
-    // 检查人数限制
-    const enrolledCount = await this.enrollmentRepository.count({
+    // 检查是否有已取消的报名记录
+    const cancelledEnrollment = await this.enrollmentRepository.findOne({
       where: {
         activity_id: activityId,
-        status: EnrollmentStatus.ENROLLED,
+        user_id: userId,
+        status: EnrollmentStatus.CANCELLED,
       },
     });
 
-    if (enrolledCount >= activity.max_participants) {
-      throw new BadRequestException('活动人数已满');
+    let enrollment: Enrollment;
+
+    if (cancelledEnrollment) {
+      // 如果有已取消的记录，重新激活它
+      cancelledEnrollment.status = EnrollmentStatus.ENROLLED;
+      enrollment = await this.enrollmentRepository.save(cancelledEnrollment);
+    } else {
+      // 检查人数限制
+      const enrolledCount = await this.enrollmentRepository.count({
+        where: {
+          activity_id: activityId,
+          status: EnrollmentStatus.ENROLLED,
+        },
+      });
+
+      if (enrolledCount >= activity.max_participants) {
+        throw new BadRequestException('活动人数已满');
+      }
+
+      // 创建新的报名记录
+      const newEnrollment = this.enrollmentRepository.create({
+        activity_id: activityId,
+        user_id: userId,
+      });
+      enrollment = await this.enrollmentRepository.save(newEnrollment);
     }
 
-    // 创建报名记录
-    const enrollment = this.enrollmentRepository.create({
-      activity_id: activityId,
-      user_id: userId,
+    // 返回包含用户信息的报名记录
+    const enrollmentWithUser = await this.enrollmentRepository.findOne({
+      where: { id: enrollment.id },
+      relations: ['user'],
     });
 
-    await this.enrollmentRepository.save(enrollment);
+    if (!enrollmentWithUser) {
+      throw new Error('报名记录创建失败');
+    }
+
+    return enrollmentWithUser;
   }
 
   async cancelEnrollment(activityId: number, userId: number): Promise<void> {
