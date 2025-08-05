@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ActivityController } from '../controller/activity.controller';
 import { ActivityService } from '../service/activity.service';
+import { CommentService } from '../service/comment.service';
 import { DatabaseInitService } from '../service/database-init.service';
 import { Activity } from '../entities/activity.entity';
 import { Category } from '../entities/category.entity';
@@ -27,7 +28,7 @@ import { UserModule } from './user.module';
     UserModule, // 导入UserModule以使用UserService
   ],
   controllers: [ActivityController],
-  providers: [ActivityService, DatabaseInitService],
+  providers: [ActivityService, CommentService, DatabaseInitService],
   exports: [ActivityService],
 })
 export class ActivityModule {}
