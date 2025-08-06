@@ -146,7 +146,7 @@ const Profile: React.FC = () => {
 
   if (isLoading || !isLoggedIn) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+      <div className="min-h-screen bg-pattern-overlay flex items-center justify-center">
         <div className="loading loading-spinner loading-lg"></div>
       </div>
     );
@@ -154,7 +154,7 @@ const Profile: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-base-200 flex items-center justify-center">
+      <div className="min-h-screen bg-pattern-overlay flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">未找到用户信息</h2>
           <button onClick={() => navigate('/login')} className="btn btn-primary">
@@ -166,7 +166,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 pt-20 pb-10">
+    <div className="min-h-screen bg-pattern-overlay pt-20 pb-10">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">

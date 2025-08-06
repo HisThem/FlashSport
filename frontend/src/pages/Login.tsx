@@ -61,7 +61,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="hero min-h-screen bg-base-200">
+    <div className="hero min-h-screen bg-pattern-overlay">
       <div className="hero-content flex-col lg:flex-row-reverse max-w-6xl mx-auto px-4">
         <div className="text-center lg:text-left">
           <h1 className="text-5xl font-bold">立即登录</h1>

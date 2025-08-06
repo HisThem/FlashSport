@@ -12,7 +12,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({
   containerClassName = '' 
 }) => {
   return (
-    <div className={`min-h-[calc(100vh-4rem)] bg-base-100 pt-4 ${className}`}>
+    <div className={`min-h-[calc(100vh-4rem)] pt-4 relative z-10 ${className}`}>
       <div className={`container mx-auto px-4 py-8 ${containerClassName}`}>
         {children}
       </div>

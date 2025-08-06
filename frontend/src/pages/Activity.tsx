@@ -175,7 +175,7 @@ const Activities: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-100 pt-20">
+    <div className="min-h-screen bg-pattern-overlay pt-20">
       <div className="container mx-auto px-4 py-8">
         {/* 页面标题 */}
         <div className="text-center mb-8">

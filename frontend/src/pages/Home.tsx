@@ -29,7 +29,7 @@ const Home: React.FC = () => {
     };
   }, []);
   return (
-    <div className="hero min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10">
+    <div className="hero min-h-screen">
       <div className="hero-content text-center">
         <div className="max-w-md">
           <h1 className="text-5xl font-bold text-primary mb-6">

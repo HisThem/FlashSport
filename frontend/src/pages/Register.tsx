@@ -205,7 +205,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="hero min-h-screen bg-base-200">
+    <div className="hero min-h-screen bg-pattern-overlay">
       <div className="hero-content flex-col lg:flex-row max-w-6xl mx-auto px-4">
         <div className="text-center lg:text-left">
           <h1 className="text-5xl font-bold">加入我们</h1>

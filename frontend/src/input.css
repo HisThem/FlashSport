@@ -32,3 +32,39 @@
     background: hsl(var(--bc) / 0.3);
   }
 }
+
+/* 运动背景组件相关样式 */
+@layer components {
+  .sports-background {
+    background-attachment: fixed;
+    background-position: 0 0;
+    animation: scrollBackground 30s linear infinite;
+  }
+  
+  @keyframes scrollBackground {
+    0% {
+      background-position: 0 0;
+    }
+    100% {
+      background-position: 200px 200px;
+    }
+  }
+  
+  /* 为了与 daisyUI 主题兼容的背景透明度调整 */
+  .bg-pattern-overlay {
+    background-color: hsl(var(--b1) / 0.85);
+  }
+  
+  [data-theme="dark"] .bg-pattern-overlay {
+    background-color: hsl(var(--b1) / 0.90);
+  }
+  
+  /* 确保卡片和内容在背景上清晰可见 */
+  .card {
+    backdrop-filter: blur(8px);
+  }
+  
+  .hero-content {
+    backdrop-filter: blur(4px);
+  }
+}

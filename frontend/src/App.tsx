@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import Navbar from './components/Navbar';
+import SportsBackground from './components/SportsBackground';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -40,9 +41,10 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <Router>
-        <div className="min-h-screen bg-base-100 flex flex-col">
+        <div className="min-h-screen bg-base-100 flex flex-col relative">
+          <SportsBackground />
           <Navbar />
-          <main className="flex-1">
+          <main className="flex-1 relative z-10">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
