@@ -746,24 +746,26 @@ export class ActivityService {
 
     // 将 enrollment_count 添加到活动对象中
     const activitiesWithCount = activities.entities.map((activity, index) => {
-      const rawData = activities.raw[index];
+      const rawData = activities.raw[index] as { enrollment_count: string };
       return {
         ...activity,
-        enrollment_count: parseInt(rawData.enrollment_count) || 0,
+        enrollment_count: parseInt(rawData.enrollment_count || '0') || 0,
       };
     });
 
     // 单独获取图片信息
     if (activitiesWithCount.length > 0) {
-      const activityIds = activitiesWithCount.map(activity => activity.id);
+      const activityIds = activitiesWithCount.map((activity) => activity.id);
       const images = await this.activityImageRepository
         .createQueryBuilder('image')
         .where('image.activity_id IN (:...activityIds)', { activityIds })
         .getMany();
 
       // 将图片分配到对应的活动
-      activitiesWithCount.forEach(activity => {
-        activity.images = images.filter(image => image.activity_id === activity.id);
+      activitiesWithCount.forEach((activity) => {
+        activity.images = images.filter(
+          (image) => image.activity_id === activity.id,
+        );
       });
     }
 
