@@ -400,6 +400,7 @@ const Admin: React.FC = () => {
           <ActivityFormModal
             isOpen={showEditModal}
             activity={editingActivity}
+            isAdminMode={true}
             onClose={() => {
               setShowEditModal(false);
               setEditingActivity(null);

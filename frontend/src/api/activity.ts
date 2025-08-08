@@ -465,6 +465,22 @@ class ActivityAPI {
   }
 
   /**
+   * 管理员更新活动
+   * @param id 活动ID
+   * @param activityData 活动数据
+   * @returns Promise<Activity>
+   */
+  async updateActivityAsAdmin(id: number, activityData: UpdateActivityRequest): Promise<Activity> {
+    const response: ApiResponse<Activity> = await request.put(`${ACTIVITY_MODULE}/admin/${id}`, activityData);
+    
+    if (response.success && response.data) {
+      return response.data;
+    }
+    
+    throw new Error(response.message || '更新活动失败');
+  }
+
+  /**
    * 管理员更新活动状态
    * @param id 活动ID
    * @param status 新状态

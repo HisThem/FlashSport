@@ -6,6 +6,7 @@ import { validateRequired, validateNumber } from '../../utils/validation';
 interface ActivityFormModalProps {
   isOpen: boolean;
   activity?: Activity | null; // 如果有值则为编辑模式，否则为创建模式
+  isAdminMode?: boolean; // 是否为管理员模式
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -13,6 +14,7 @@ interface ActivityFormModalProps {
 const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   isOpen,
   activity,
+  isAdminMode = false,
   onClose,
   onSuccess
 }) => {
@@ -207,7 +209,11 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           status: formData.status,
           image_urls: formData.images
         };
-        await activityAPI.updateActivity(activity.id, updateData);
+        if (isAdminMode) {
+          await activityAPI.updateActivityAsAdmin(activity.id, updateData);
+        } else {
+          await activityAPI.updateActivity(activity.id, updateData);
+        }
       } else {
         // 创建模式
         const createData: CreateActivityRequest = {

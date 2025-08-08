@@ -695,12 +695,19 @@ export class ActivityService {
       .createQueryBuilder('activity')
       .leftJoinAndSelect('activity.category', 'category')
       .leftJoinAndSelect('activity.organizer', 'organizer')
-      .leftJoinAndSelect('activity.images', 'images');
+      .leftJoin(
+        'enrollments',
+        'enrollment',
+        'enrollment.activity_id = activity.id AND enrollment.status = :enrolledStatus',
+        { enrolledStatus: 'enrolled' },
+      )
+      .addSelect('COUNT(enrollment.id)', 'enrollment_count')
+      .groupBy('activity.id, category.id, organizer.id');
 
     // 搜索条件
     if (keyword) {
       query = query.where(
-        'activity.title LIKE :keyword OR activity.description LIKE :keyword',
+        'activity.name LIKE :keyword OR activity.description LIKE :keyword',
         { keyword: `%${keyword}%` },
       );
     }
@@ -725,30 +732,45 @@ export class ActivityService {
     } else if (sort === 'start_time') {
       query = query.orderBy('activity.start_time', 'ASC');
     } else if (sort === 'participants') {
-      // 这里需要添加子查询来计算参与者数量
-      query = query
-        .leftJoin(
-          'enrollments',
-          'enrollment',
-          'enrollment.activity_id = activity.id AND enrollment.status = :enrolledStatus',
-          { enrolledStatus: 'enrolled' },
-        )
-        .addSelect('COUNT(enrollment.id)', 'participant_count')
-        .groupBy('activity.id')
-        .orderBy('participant_count', 'DESC');
+      query = query.orderBy('enrollment_count', 'DESC');
     }
 
     // 分页
-    const total = await query.getCount();
-    const activities = await query
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
+    const [activities, total] = await Promise.all([
+      query
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getRawAndEntities(),
+      query.getCount(),
+    ]);
+
+    // 将 enrollment_count 添加到活动对象中
+    const activitiesWithCount = activities.entities.map((activity, index) => {
+      const rawData = activities.raw[index];
+      return {
+        ...activity,
+        enrollment_count: parseInt(rawData.enrollment_count) || 0,
+      };
+    });
+
+    // 单独获取图片信息
+    if (activitiesWithCount.length > 0) {
+      const activityIds = activitiesWithCount.map(activity => activity.id);
+      const images = await this.activityImageRepository
+        .createQueryBuilder('image')
+        .where('image.activity_id IN (:...activityIds)', { activityIds })
+        .getMany();
+
+      // 将图片分配到对应的活动
+      activitiesWithCount.forEach(activity => {
+        activity.images = images.filter(image => image.activity_id === activity.id);
+      });
+    }
 
     const totalPages = Math.ceil(total / limit);
 
     return {
-      items: activities,
+      items: activitiesWithCount,
       total,
       page,
       limit,
@@ -777,6 +799,67 @@ export class ActivityService {
 
     // 删除活动
     await this.activityRepository.delete(activityId);
+  }
+
+  async updateActivityAsAdmin(
+    id: number,
+    updateActivityDto: UpdateActivityDto,
+  ): Promise<Activity> {
+    const activity = await this.getActivityById(id);
+
+    const { image_urls, ...updateData } = updateActivityDto;
+
+    // 验证时间逻辑（如果有更新时间）
+    if (
+      updateData.start_time ||
+      updateData.end_time ||
+      updateData.registration_deadline
+    ) {
+      const startTime = updateData.start_time
+        ? new Date(updateData.start_time)
+        : activity.start_time;
+      const endTime = updateData.end_time
+        ? new Date(updateData.end_time)
+        : activity.end_time;
+      const regDeadline = updateData.registration_deadline
+        ? new Date(updateData.registration_deadline)
+        : activity.registration_deadline;
+
+      // 验证时间逻辑
+      if (startTime >= endTime) {
+        throw new BadRequestException('活动开始时间必须早于结束时间');
+      }
+
+      if (regDeadline >= startTime) {
+        throw new BadRequestException('报名截止时间必须早于活动开始时间');
+      }
+    }
+
+    // 更新活动基本信息
+    Object.assign(activity, updateData);
+
+    // 保存活动（不包括图片处理）
+    const savedActivity = await this.activityRepository.save(activity);
+
+    // 处理图片
+    if (image_urls && Array.isArray(image_urls)) {
+      // 删除现有图片关联
+      await this.activityImageRepository.delete({ activity_id: id });
+
+      // 添加新图片关联
+      if (image_urls.length > 0) {
+        const imageEntities = image_urls.map((url) => {
+          const image = new ActivityImage();
+          image.activity_id = id;
+          image.image_url = url;
+          return image;
+        });
+        await this.activityImageRepository.save(imageEntities);
+      }
+    }
+
+    // 重新获取完整的活动信息（包含图片）
+    return this.getActivityById(savedActivity.id);
   }
 
   async updateActivityStatusAsAdmin(

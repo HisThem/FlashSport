@@ -348,6 +348,29 @@ export class ActivityController {
     };
   }
 
+  @Put('admin/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateActivityAsAdmin(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+    @Body() updateActivityDto: UpdateActivityDto,
+  ): Promise<ApiResponse> {
+    // 验证管理员权限
+    if (req.user.role !== 'admin') {
+      throw new ForbiddenException('只有管理员可以更新活动');
+    }
+
+    const activity = await this.activityService.updateActivityAsAdmin(
+      id,
+      updateActivityDto,
+    );
+    return {
+      success: true,
+      message: '活动更新成功',
+      data: activity,
+    };
+  }
+
   @Post('admin/:id/status')
   @UseGuards(JwtAuthGuard)
   async updateActivityStatusAsAdmin(
