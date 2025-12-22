@@ -18,9 +18,13 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   onClose,
   onSuccess
 }) => {
+  type PreviewStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [coverPreviewStatus, setCoverPreviewStatus] = useState<PreviewStatus>('idle');
+  const [imagePreviewStatus, setImagePreviewStatus] = useState<Record<number, PreviewStatus>>({});
   
   const [formData, setFormData] = useState({
     name: '',
@@ -97,6 +101,8 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       images: []
     });
     setErrors({});
+    setCoverPreviewStatus('idle');
+    setImagePreviewStatus({});
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -108,7 +114,10 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         : value
     }));
     
-    // 清除对应字段的错误
+    if (name === 'cover_image_url') {
+      setCoverPreviewStatus(value ? 'loading' : 'idle');
+    }
+    
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -129,7 +138,65 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
+    setImagePreviewStatus(prev => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   };
+
+  useEffect(() => {
+    const url = formData.cover_image_url;
+    if (!url) {
+      setCoverPreviewStatus('idle');
+      return;
+    }
+
+    setCoverPreviewStatus('loading');
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => {
+      if (!cancelled) setCoverPreviewStatus('loaded');
+    };
+    img.onerror = () => {
+      if (!cancelled) setCoverPreviewStatus('error');
+    };
+    img.src = url;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [formData.cover_image_url]);
+
+  useEffect(() => {
+    const initialStatus: Record<number, PreviewStatus> = {};
+    const controllers: Array<() => void> = [];
+
+    formData.images.forEach((url, idx) => {
+      if (!url) {
+        initialStatus[idx] = 'idle';
+        return;
+      }
+
+      initialStatus[idx] = 'loading';
+      let cancelled = false;
+      const img = new Image();
+      img.onload = () => {
+        if (!cancelled) setImagePreviewStatus(prev => ({ ...prev, [idx]: 'loaded' }));
+      };
+      img.onerror = () => {
+        if (!cancelled) setImagePreviewStatus(prev => ({ ...prev, [idx]: 'error' }));
+      };
+      img.src = url;
+      controllers.push(() => { cancelled = true; });
+    });
+
+    setImagePreviewStatus(initialStatus);
+
+    return () => {
+      controllers.forEach(stop => stop());
+    };
+  }, [formData.images]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -451,14 +518,50 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             <label className="label">
               <span className="label-text">封面图片</span>
             </label>
-            <input
-              type="url"
-              name="cover_image_url"
-              value={formData.cover_image_url}
-              onChange={handleInputChange}
-              className="input input-bordered w-full"
-              placeholder="请输入图片URL"
-            />
+            <div className="relative">
+              <input
+                type="url"
+                name="cover_image_url"
+                value={formData.cover_image_url}
+                onChange={handleInputChange}
+                className={`input input-bordered w-full ${(coverPreviewStatus === 'loaded' || coverPreviewStatus === 'error') ? 'pr-10' : ''}`}
+                placeholder="请输入图片URL"
+              />
+              {coverPreviewStatus === 'loaded' && (
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-success" aria-label="封面图片已加载">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879A1 1 0 106.293 10.293l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </span>
+              )}
+              {coverPreviewStatus === 'error' && (
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-error" aria-label="封面图片加载失败">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm2.28-10.28a.75.75 0 10-1.06-1.06L10 8.94 8.78 7.72a.75.75 0 10-1.06 1.06L8.94 10l-1.22 1.22a.75.75 0 101.06 1.06L10 11.06l1.22 1.22a.75.75 0 101.06-1.06L11.06 10l1.22-1.22z" clipRule="evenodd" />
+                  </svg>
+                </span>
+              )}
+            </div>
+            {formData.cover_image_url && (
+              <div className="mt-2">
+                {coverPreviewStatus === 'error' ? (
+                  <div className="text-error text-sm">图片预览加载失败，请确认图片 URL 是否正确</div>
+                ) : (
+                  <div className="relative w-full rounded-lg overflow-hidden bg-base-200 flex items-center justify-center min-h-24">
+                    {coverPreviewStatus === 'loading' && (
+                      <span className="loading loading-spinner loading-sm" aria-label="封面预览加载中" />
+                    )}
+                    <img
+                      src={formData.cover_image_url}
+                      alt="封面预览"
+                      className={`max-h-64 w-auto h-auto object-contain transition-opacity duration-200 ${coverPreviewStatus === 'loading' ? 'opacity-0' : 'opacity-100'}`}
+                      onLoad={() => setCoverPreviewStatus('loaded')}
+                      onError={() => setCoverPreviewStatus('error')}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 活动状态（仅编辑模式） */}
@@ -488,25 +591,63 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
             </label>
             <div className="space-y-2">
               {formData.images.map((url, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={(e) => {
-                      const newImages = [...formData.images];
-                      newImages[index] = e.target.value;
-                      setFormData(prev => ({ ...prev, images: newImages }));
-                    }}
-                    className="input input-bordered flex-1"
-                    placeholder="图片URL"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="btn btn-error btn-sm"
-                  >
-                    删除
-                  </button>
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="url"
+                        value={url}
+                        onChange={(e) => {
+                          const newImages = [...formData.images];
+                          newImages[index] = e.target.value;
+                          setFormData(prev => ({ ...prev, images: newImages }));
+                        }}
+                        className={`input input-bordered w-full ${(imagePreviewStatus[index] === 'loaded' || imagePreviewStatus[index] === 'error') ? 'pr-10' : ''}`}
+                        placeholder="图片URL"
+                      />
+                      {imagePreviewStatus[index] === 'loaded' && (
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-success" aria-label={`活动图片${index + 1}已加载`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.707a1 1 0 00-1.414-1.414L9 10.172 7.707 8.879A1 1 0 106.293 10.293l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                      {imagePreviewStatus[index] === 'error' && (
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-error" aria-label={`活动图片${index + 1}加载失败`}>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm2.28-10.28a.75.75 0 10-1.06-1.06L10 8.94 8.78 7.72a.75.75 0 10-1.06 1.06L8.94 10l-1.22 1.22a.75.75 0 101.06 1.06L10 11.06l1.22 1.22a.75.75 0 101.06-1.06L11.06 10l1.22-1.22z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="btn btn-error btn-sm"
+                    >
+                      删除
+                    </button>
+                  </div>
+                  {url && (
+                    <div className="w-full">
+                      {imagePreviewStatus[index] === 'error' ? (
+                        <div className="text-error text-sm">图片预览加载失败，请确认图片 URL 是否正确</div>
+                      ) : (
+                        <div className="w-full rounded-lg overflow-hidden bg-base-200 flex items-center justify-center min-h-24">
+                          {imagePreviewStatus[index] === 'loading' && (
+                            <span className="loading loading-spinner loading-xs" aria-label="图片预览加载中" />
+                          )}
+                          <img
+                            src={url}
+                            alt={`活动图片${index + 1}`}
+                            className={`max-h-64 w-auto h-auto object-contain ${imagePreviewStatus[index] === 'loading' ? 'opacity-0' : 'opacity-100'}`}
+                            onLoad={() => setImagePreviewStatus(prev => ({ ...prev, [index]: 'loaded' }))}
+                            onError={() => setImagePreviewStatus(prev => ({ ...prev, [index]: 'error' }))}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
               <button
