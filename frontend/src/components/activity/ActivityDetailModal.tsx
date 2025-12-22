@@ -124,17 +124,15 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
   return (
     <>
-    <div className="modal modal-open">
-      <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg">{enrichedActivity.name}</h3>
-          <button 
-            className="btn btn-sm btn-circle btn-ghost"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
+    <div className="modal modal-open pt-20">
+      <div className="modal-box relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <button 
+          className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
+          onClick={onClose}
+        >
+          ✕
+        </button>
+        <h3 className="font-bold text-lg mb-4">{enrichedActivity.name}</h3>
 
         {/* 活动封面图片 */}
         <div className="mb-6">
@@ -418,7 +416,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
     {/* 图片预览模态框 */}
     {previewImage && (
-      <div className="modal modal-open">
+      <div className="modal modal-open pt-20">
         <div className="modal-box max-w-4xl p-0 bg-transparent shadow-none">
           <div className="relative">
             <img 

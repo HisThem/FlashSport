@@ -322,8 +322,15 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="modal modal-open pt-20">
+      <div className="modal-box relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <button 
+          className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
+          onClick={handleClose}
+          disabled={loading}
+        >
+          ✕
+        </button>
         <h3 className="font-bold text-lg mb-6">
           {isEditMode ? '编辑活动' : '发布新活动'}
         </h3>
