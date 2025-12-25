@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import Navbar from './components/Navbar';
 import SportsBackground from './components/SportsBackground';
-import Home from './pages/Home';
+import Community from './pages/Community';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
@@ -46,7 +46,8 @@ const App: React.FC = () => {
           <Navbar />
           <main className="flex-1 relative z-10">
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Community />} />
+              <Route path="/community" element={<Community />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />

@@ -115,7 +115,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 
   return (
     <div
-      className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col cursor-pointer"
+      className="card bg-base-100 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col cursor-pointer"
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       role="button"
@@ -125,7 +125,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         <img 
           src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
           alt={enrichedActivity.name}
-          className="h-48 w-full object-cover"
+          className="h-48 w-full object-cover rounded-t-2xl"
         />
         <div className="absolute top-2 right-2">
           {getStatusBadge(enrichedActivity)}

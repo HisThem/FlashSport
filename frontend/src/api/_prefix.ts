@@ -10,3 +10,5 @@ export const USER_MODULE = `${API_MODULE}/user`;
 // 活动模块
 export const ACTIVITY_MODULE = `${API_MODULE}/activity`;
 
+// 帖子模块
+export const POST_MODULE = `${API_MODULE}/post`;
