@@ -4,7 +4,7 @@ import activityAPI from '../api/activity';
 import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
-import SimpleToast from '../components/SimpleToast';
+import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
 const Activities: React.FC = () => {
@@ -14,7 +14,7 @@ const Activities: React.FC = () => {
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toast = useToast();
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
   
   // 搜索和筛选状态
@@ -48,7 +48,7 @@ const Activities: React.FC = () => {
       setCategories(categoriesData);
     } catch (error) {
       console.error('加载分类失败:', error);
-      showToast('加载分类失败', 'error');
+      toast.error('加载分类失败');
     }
   };
 
@@ -67,7 +67,7 @@ const Activities: React.FC = () => {
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('加载活动失败:', error);
-      showToast('加载活动失败', 'error');
+      toast.error('加载活动失败');
     } finally {
       if (isInitialLoad) {
         setLoading(false);
@@ -75,11 +75,6 @@ const Activities: React.FC = () => {
         setActivitiesLoading(false);
       }
     }
-  };
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const handleCategoryFilter = (categoryId?: number) => {
@@ -151,16 +146,16 @@ const Activities: React.FC = () => {
 
   const handleEnroll = async (activityId: number) => {
     if (!currentUser) {
-      showToast('请先登录', 'error');
+      toast.error('请先登录');
       return;
     }
 
     try {
       await activityAPI.enrollActivity(activityId);
       await updateActivityData(activityId);
-      showToast('报名成功', 'success');
+      toast.success('报名成功');
     } catch (error: any) {
-      showToast(error.message || '报名失败', 'error');
+      toast.error(error.message || '报名失败');
     }
   };
 
@@ -168,9 +163,9 @@ const Activities: React.FC = () => {
     try {
       await activityAPI.cancelEnrollment(activityId);
       await updateActivityData(activityId);
-      showToast('取消报名成功', 'success');
+      toast.success('取消报名成功');
     } catch (error: any) {
-      showToast(error.message || '取消报名失败', 'error');
+      toast.error(error.message || '取消报名失败');
     }
   };
 
@@ -340,14 +335,6 @@ const Activities: React.FC = () => {
         onCancelEnrollment={handleCancelEnrollment}
       />
 
-      {/* Toast 提示 */}
-      {toast && (
-        <SimpleToast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   );
 };

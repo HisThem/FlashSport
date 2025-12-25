@@ -5,7 +5,7 @@ import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
-import SimpleToast from '../components/SimpleToast';
+import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
 const MyActivities: React.FC = () => {
@@ -17,8 +17,8 @@ const MyActivities: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
+  const toast = useToast();
 
   useEffect(() => {
     if (currentUser) {
@@ -46,15 +46,10 @@ const MyActivities: React.FC = () => {
       setEnrolledActivities(enrichedEnrolledActivities);
     } catch (error) {
       console.error('加载活动失败:', error);
-      showToast('加载活动失败', 'error');
+      toast.error('加载活动失败');
     } finally {
       setLoading(false);
     }
-  };
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const handleViewDetail = (activity: Activity) => {
@@ -76,11 +71,11 @@ const MyActivities: React.FC = () => {
     if (editingActivity) {
       // 如果是编辑现有活动，只更新单个活动数据
       updateSingleActivityData(editingActivity.id);
-      showToast('活动更新成功', 'success');
+      toast.success('活动更新成功');
     } else {
       // 如果是新增活动，需要重新加载所有数据
       loadAllData();
-      showToast('活动发布成功', 'success');
+      toast.success('活动发布成功');
     }
   };
 
@@ -89,17 +84,17 @@ const MyActivities: React.FC = () => {
     const activityStartTime = new Date(activity.start_time);
 
     if (currentTime > activityStartTime) {
-      showToast('活动开始后不能取消活动', 'error');
+      toast.error('活动开始后不能取消活动');
       return;
     }
 
     if (activity.status === 'cancelled') {
-      showToast('活动已经取消了', 'error');
+      toast.error('活动已经取消了');
       return;
     }
 
     if (activity.status === 'finished') {
-      showToast('已结束的活动不能取消', 'error');
+      toast.error('已结束的活动不能取消');
       return;
     }
 
@@ -110,9 +105,9 @@ const MyActivities: React.FC = () => {
     try {
       await activityAPI.cancelActivity(activity.id);
       await updateSingleActivityData(activity.id);
-      showToast('活动已取消', 'success');
+      toast.success('活动已取消');
     } catch (error: any) {
-      showToast(error.message || '取消活动失败', 'error');
+      toast.error(error.message || '取消活动失败');
     }
   };
 
@@ -122,21 +117,21 @@ const MyActivities: React.FC = () => {
     const endTime = new Date(activity.end_time);
     
     if (now > endTime) {
-      showToast('活动结束后不能更改活动状态', 'error');
+      toast.error('活动结束后不能更改活动状态');
       return;
     }
 
     if (activity.status === 'cancelled') {
-      showToast('已取消的活动不能更改状态', 'error');
+      toast.error('已取消的活动不能更改状态');
       return;
     }
 
     try {
       await activityAPI.updateActivityStatus(activity.id, newStatus as any);
       await updateSingleActivityData(activity.id);
-      showToast('活动状态更新成功', 'success');
+      toast.success('活动状态更新成功');
     } catch (error: any) {
-      showToast(error.message || '更新活动状态失败', 'error');
+      toast.error(error.message || '更新活动状态失败');
     }
   };
 
@@ -218,9 +213,9 @@ const MyActivities: React.FC = () => {
     try {
       await activityAPI.cancelEnrollment(activityId);
       await updateSingleActivityData(activityId);
-      showToast('取消报名成功', 'success');
+      toast.success('取消报名成功');
     } catch (error: any) {
-      showToast(error.message || '取消报名失败', 'error');
+      toast.error(error.message || '取消报名失败');
     }
   };
 
@@ -371,14 +366,6 @@ const MyActivities: React.FC = () => {
         onSuccess={handleFormSuccess}
       />
 
-      {/* Toast 提示 */}
-      {toast && (
-        <SimpleToast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </div>
   );
 };

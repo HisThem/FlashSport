@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '../components/PageLayout';
-import { useToast } from '../components/Toast';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
 import activityAPI, { Activity, ActivityStatus, GetActivitiesRequest, Category } from '../api/activity';
 import { useCurrentUser } from '../hooks/useAuth';
 import { formatActivityLocation } from '../utils/activity';
+import { useToast } from '../components/Toast';
 
 const Admin: React.FC = () => {
   const { user: currentUser } = useCurrentUser();
-  const toast = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const toast = useToast();
   
   // 分页和筛选状态
   const [currentPage, setCurrentPage] = useState(1);

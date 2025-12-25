@@ -67,4 +67,35 @@
   .hero-content {
     backdrop-filter: blur(4px);
   }
+
+  /* Toast 下落动画 */
+  @keyframes toastDrop {
+    0% {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .toast-drop {
+    animation: toastDrop 0.2s ease-out;
+  }
+
+  @keyframes toastLeave {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+  }
+
+  .toast-leave {
+    animation: toastLeave 0.18s ease-in forwards;
+  }
 }

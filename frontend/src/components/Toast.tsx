@@ -1,5 +1,7 @@
 import React, { useState, createContext, useContext } from 'react';
 
+const EXIT_ANIMATION_MS = 180;
+
 /**
  * Toast通知类型
  */
@@ -14,6 +16,7 @@ export interface ToastMessage {
   title?: string;
   message: string;
   duration?: number;
+  leaving?: boolean;
 }
 
 /**
@@ -60,7 +63,22 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
    * 移除Toast消息
    */
   const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    // 标记为离场，等待动画结束后再移除
+    setToasts(prev => {
+      let found = false;
+      const updated = prev.map(toast => {
+        if (toast.id === id) {
+          found = true;
+          return { ...toast, leaving: true };
+        }
+        return toast;
+      });
+      return found ? updated : prev;
+    });
+
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, EXIT_ANIMATION_MS);
   };
 
   return (
@@ -81,9 +99,11 @@ const ToastContainer: React.FC<{
   if (toasts.length === 0) return null;
 
   return (
-    <div className="toast toast-top toast-end z-50">
-      {toasts.map(toast => (
-        <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
+    <div className="fixed left-1/2 -translate-x-1/2 top-[5rem] z-[99999] flex flex-col items-center gap-3 px-4 pointer-events-none">
+      {toasts.map((toast) => (
+        <div key={toast.id} className="pointer-events-auto w-full max-w-lg">
+          <ToastItem toast={toast} onRemove={onRemove} />
+        </div>
       ))}
     </div>
   );
@@ -175,7 +195,10 @@ const ToastItem: React.FC<{
   };
 
   return (
-    <div className={`alert ${getAlertClass(toast.type)} cursor-pointer`} onClick={() => onRemove(toast.id)}>
+    <div
+      className={`alert ${getAlertClass(toast.type)} cursor-pointer toast-drop ${toast.leaving ? 'toast-leave' : ''}`}
+      onClick={() => onRemove(toast.id)}
+    >
       {getIcon(toast.type)}
       <div>
         {toast.title && <div className="font-bold">{toast.title}</div>}
