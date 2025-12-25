@@ -25,6 +25,12 @@ export class User {
   @Column({ nullable: true })
   avatar_url?: string;
 
+  @Column({ nullable: true })
+  province?: string;
+
+  @Column({ nullable: true })
+  city?: string;
+
   @Column({ default: 'user' })
   role: 'admin' | 'user';
 

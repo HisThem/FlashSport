@@ -7,6 +7,8 @@ export interface User {
   username: string;
   email: string;
   avatar_url?: string;
+  province?: string;
+  city?: string;
   role: 'admin' | 'user';
   created_at?: string;
   updated_at?: string;
@@ -24,6 +26,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   confirmPassword: string;
+  province?: string;
+  city?: string;
   agreeTerms?: boolean; // 前端表单用，不会发送到后端
 }
 
@@ -57,6 +61,8 @@ export interface ApiResponse<T = any> {
 export interface UpdateProfileRequest {
   username?: string;
   avatar_url?: string;
+  province?: string;
+  city?: string;
   phone?: string;
   bio?: string;
 }
@@ -156,7 +162,9 @@ class UserAPI {
    * @param userData 要更新的用户数据
    * @returns Promise<User>
    */
-  async updateProfile(userData: Partial<Pick<User, 'username' | 'avatar_url'>>): Promise<User> {
+  async updateProfile(
+    userData: Partial<Pick<User, 'username' | 'avatar_url' | 'province' | 'city'>>
+  ): Promise<User> {
     const response: ApiResponse<User> = await request.put(`${USER_MODULE}/profile`, userData);
     
     if (response.success && response.data) {
@@ -312,4 +320,3 @@ class UserAPI {
 // 创建并导出用户API实例
 const userAPI = new UserAPI();
 export default userAPI;
-

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import userAPI, { RegisterRequest } from '../api/user';
 import { useGuestGuard } from '../hooks/useAuth';
+import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
 
 const Register: React.FC = () => {
   // 使用访客守卫，已登录用户重定向到首页
@@ -13,8 +14,11 @@ const Register: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    province: '',
+    city: '',
     agreeTerms: false
   });
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<{
@@ -108,11 +112,15 @@ const Register: React.FC = () => {
     return undefined;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ): void => {
+    const { name, value } = e.target;
+    const isCheckbox = (e.target as HTMLInputElement).type === 'checkbox';
+    const nextValue = isCheckbox ? (e.target as HTMLInputElement).checked : value;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: nextValue
     });
 
     // 实时验证
@@ -162,6 +170,16 @@ const Register: React.FC = () => {
     }
   };
 
+  const handleProvinceChange = (provinceValue: string) => {
+    const cities = provinceValue ? getCitiesByProvince(provinceValue) : [];
+    setAvailableCities(cities);
+    setFormData(prev => ({
+      ...prev,
+      province: provinceValue,
+      city: cities.includes(prev.city || '') ? prev.city : ''
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setIsLoading(true);
@@ -183,8 +201,13 @@ const Register: React.FC = () => {
     }
 
     try {
+      const cleanedData: RegisterRequest = {
+        ...formData,
+        province: formData.province || undefined,
+        city: formData.city || undefined
+      };
       // 使用userAPI进行注册
-      const response = await userAPI.register(formData);
+      const response = await userAPI.register(cleanedData);
       
       if (response.success) {
         // 注册成功后跳转到登录页面
@@ -330,6 +353,50 @@ const Register: React.FC = () => {
                   <span className="label-text-alt text-error">{validationErrors.confirmPassword}</span>
                 </label>
               )}
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">所在省份（选填）</span>
+              </label>
+              <select
+                name="province"
+                className="select select-bordered"
+                value={formData.province || ''}
+                onChange={(e) => handleProvinceChange(e.target.value)}
+              >
+                <option value="">请选择省份</option>
+                {PROVINCES.map((province) => (
+                  <option key={province.name} value={province.name}>
+                    {province.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">所在城市（选填）</span>
+              </label>
+              <select
+                name="city"
+                className="select select-bordered"
+                value={formData.city || ''}
+                onChange={handleChange}
+                disabled={!formData.province}
+              >
+                <option value="">请选择城市</option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              <label className="label">
+                <span className="label-text-alt text-base-content/60">
+                  此后可在“个人资料”界面修改
+                </span>
+              </label>
             </div>
             
             <div className="form-control">

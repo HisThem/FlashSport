@@ -25,7 +25,7 @@ export class UserService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<User> {
-    const { username, email, password } = registerDto;
+    const { username, email, password, province, city } = registerDto;
 
     // 检查邮箱是否已存在
     const existingUserByEmail = await this.userRepository.findOne({
@@ -51,6 +51,8 @@ export class UserService {
       username,
       email,
       password: hashedPassword,
+      province,
+      city,
     });
 
     return await this.userRepository.save(user);

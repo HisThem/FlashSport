@@ -17,6 +17,11 @@ const Activities: React.FC = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const toast = useToast();
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
+  const defaultProvince = currentUser?.province || undefined;
+  const defaultCity = defaultProvince && currentUser?.city
+    && getCitiesByProvince(defaultProvince).includes(currentUser.city)
+    ? currentUser.city
+    : undefined;
   
   // 搜索和筛选状态
   const [searchParams, setSearchParams] = useState<GetActivitiesRequest>({
@@ -26,8 +31,8 @@ const Activities: React.FC = () => {
     keyword: '',
     status: undefined,
     sort: 'newest',
-    province: undefined,
-    city: undefined,
+    province: defaultProvince,
+    city: defaultCity,
   });
   
   const [totalPages, setTotalPages] = useState(1);

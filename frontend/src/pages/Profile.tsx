@@ -2,23 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import userAPI, { User } from '../api/user';
 import { useAuthGuard } from '../hooks/useAuth';
+import { useToast } from '../components/Toast';
 import Avatar from '../components/Avatar';
+import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const toast = useToast(); // 添加Toast
   const isLoggedIn = useAuthGuard(); // 使用认证守卫
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [successMessage, setSuccessMessage] = useState<string>('');
 
   // 表单数据
   const [profileForm, setProfileForm] = useState({
     username: '',
-    avatar_url: ''
+    avatar_url: '',
+    province: '',
+    city: ''
   });
+  const [availableCities, setAvailableCities] = useState<string[]>([]);
 
   const [passwordForm, setPasswordForm] = useState({
     oldPassword: '',
@@ -35,7 +39,6 @@ const Profile: React.FC = () => {
     const loadUserProfile = async () => {
       try {
         setIsLoading(true);
-        setError('');
         
         // 先从本地存储获取用户信息并立即显示
         const localUser = userAPI.getCurrentUserFromStorage();
@@ -43,8 +46,13 @@ const Profile: React.FC = () => {
           setUser(localUser);
           setProfileForm({
             username: localUser.username,
-            avatar_url: localUser.avatar_url || ''
+            avatar_url: localUser.avatar_url || '',
+            province: localUser.province || '',
+            city: localUser.city || ''
           });
+          setAvailableCities(
+            localUser.province ? getCitiesByProvince(localUser.province) : []
+          );
         }
 
         // 然后尝试从服务器获取最新用户信息
@@ -53,13 +61,18 @@ const Profile: React.FC = () => {
           setUser(userData);
           setProfileForm({
             username: userData.username,
-            avatar_url: userData.avatar_url || ''
+            avatar_url: userData.avatar_url || '',
+            province: userData.province || '',
+            city: userData.city || ''
           });
+          setAvailableCities(
+            userData.province ? getCitiesByProvince(userData.province) : []
+          );
         } catch (error) {
           // 如果服务器请求失败但有本地用户信息，继续使用本地信息
           if (!localUser) {
             console.error('加载用户资料时出错:', error);
-            setError('获取用户信息失败，请稍后重试');
+            toast.error('获取用户信息失败，请稍后重试');
             return;
           }
           // 401错误会被全局错误处理器处理，这里不需要特殊处理
@@ -69,7 +82,7 @@ const Profile: React.FC = () => {
         console.error('加载用户资料时出错:', error);
         // 401错误会被全局处理，其他错误显示给用户
         const errorMessage = error instanceof Error ? error.message : '获取用户信息失败';
-        setError('获取用户信息失败: ' + errorMessage);
+        toast.error('获取用户信息失败: ' + errorMessage);
       } finally {
         setIsLoading(false);
       }
@@ -79,11 +92,23 @@ const Profile: React.FC = () => {
   }, [isLoggedIn]);
 
   // 处理个人资料表单变化
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfileChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setProfileForm({
       ...profileForm,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleProvinceChange = (provinceValue: string) => {
+    const cities = provinceValue ? getCitiesByProvince(provinceValue) : [];
+    setAvailableCities(cities);
+    setProfileForm(prev => ({
+      ...prev,
+      province: provinceValue,
+      city: cities.includes(prev.city) ? prev.city : ''
+    }));
   };
 
   // 处理密码表单变化
@@ -97,17 +122,13 @@ const Profile: React.FC = () => {
   // 保存个人资料
   const handleSaveProfile = async () => {
     try {
-      setError('');
       const updatedUser = await userAPI.updateProfile(profileForm);
       setUser(updatedUser);
       setIsEditing(false);
-      setSuccessMessage('个人资料更新成功！');
-      
-      // 3秒后清除成功消息
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('个人资料更新成功！');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新个人资料失败';
-      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -115,12 +136,10 @@ const Profile: React.FC = () => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      setError('');
-      
       // 先验证token是否有效
       const isValid = await userAPI.verifyToken();
       if (!isValid) {
-        setError('登录状态已失效，请重新登录');
+        toast.error('登录状态已失效，请重新登录');
         return;
       }
       
@@ -131,16 +150,13 @@ const Profile: React.FC = () => {
         confirmNewPassword: ''
       });
       setIsChangingPassword(false);
-      setSuccessMessage('密码修改成功！');
-      
-      // 3秒后清除成功消息
-      setTimeout(() => setSuccessMessage(''), 3000);
+      toast.success('密码修改成功！');
     } catch (error) {
       console.error('修改密码失败:', error);
       
       // 401错误会被全局错误处理器处理，其他错误显示给用户
       const errorMessage = error instanceof Error ? error.message : '修改密码失败';
-      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -171,42 +187,6 @@ const Profile: React.FC = () => {
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <h1 className="card-title text-3xl mb-6">个人资料</h1>
-            
-            {/* 成功消息 */}
-            {successMessage && (
-              <div className="alert alert-success mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{successMessage}</span>
-              </div>
-            )}
-
-            {/* 错误消息 */}
-            {error && (
-              <div className="alert alert-error mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 shrink-0 stroke-current"
-                  fill="none"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* 用户头像和基本信息 */}
@@ -272,6 +252,45 @@ const Profile: React.FC = () => {
                       />
                     </div>
 
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">所在省份</span>
+                      </label>
+                      <select
+                        name="province"
+                        className="select select-bordered"
+                        value={profileForm.province}
+                        onChange={(e) => handleProvinceChange(e.target.value)}
+                      >
+                        <option value="">未设置</option>
+                        {PROVINCES.map((province) => (
+                          <option key={province.name} value={province.name}>
+                            {province.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-control">
+                      <label className="label">
+                        <span className="label-text">所在城市</span>
+                      </label>
+                      <select
+                        name="city"
+                        className="select select-bordered"
+                        value={profileForm.city}
+                        onChange={handleProfileChange}
+                        disabled={!profileForm.province}
+                      >
+                        <option value="">未设置</option>
+                        {availableCities.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
                     <div className="flex gap-2">
                       <button
                         onClick={handleSaveProfile}
@@ -284,8 +303,13 @@ const Profile: React.FC = () => {
                           setIsEditing(false);
                           setProfileForm({
                             username: user.username,
-                            avatar_url: user.avatar_url || ''
+                            avatar_url: user.avatar_url || '',
+                            province: user.province || '',
+                            city: user.city || ''
                           });
+                          setAvailableCities(
+                            user.province ? getCitiesByProvince(user.province) : []
+                          );
                         }}
                         className="btn btn-outline"
                       >
@@ -302,6 +326,14 @@ const Profile: React.FC = () => {
                     <div>
                       <label className="text-sm text-base-content/70">邮箱</label>
                       <p className="text-lg">{user.email}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-base-content/70">所在省份</label>
+                      <p className="text-lg">{user.province || '未设置'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-base-content/70">所在城市</label>
+                      <p className="text-lg">{user.city || '未设置'}</p>
                     </div>
                   </div>
                 )}

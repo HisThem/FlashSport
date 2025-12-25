@@ -29,6 +29,14 @@ export class RegisterDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 }
 
 export class UpdateProfileDto {
@@ -40,6 +48,14 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   avatar_url?: string;
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 }
 
 export class ChangePasswordDto {
