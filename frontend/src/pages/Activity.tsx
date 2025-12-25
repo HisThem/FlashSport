@@ -6,6 +6,7 @@ import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
+import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
 
 const Activities: React.FC = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -24,7 +25,9 @@ const Activities: React.FC = () => {
     category_id: undefined,
     keyword: '',
     status: undefined,
-    sort: 'newest'
+    sort: 'newest',
+    province: undefined,
+    city: undefined,
   });
   
   const [totalPages, setTotalPages] = useState(1);
@@ -111,6 +114,25 @@ const Activities: React.FC = () => {
       ...prev,
       sort: sort as any,
       page: 1
+    }));
+  };
+
+  const handleProvinceChange = (provinceValue: string) => {
+    const province = provinceValue || undefined;
+    setSearchParams(prev => ({
+      ...prev,
+      province,
+      city: undefined,
+      page: 1,
+    }));
+  };
+
+  const handleCityChange = (cityValue: string) => {
+    const city = cityValue || undefined;
+    setSearchParams(prev => ({
+      ...prev,
+      city,
+      page: 1,
     }));
   };
 
@@ -224,10 +246,10 @@ const Activities: React.FC = () => {
             ))}
           </div>
 
-          {/* 排序 */}
-          <div className="flex justify-start items-center">
+          {/* 排序 + 省市筛选 */}
+          <div className="flex flex-wrap items-center gap-3 justify-start">
             <select
-              className="select select-bordered select-sm"
+              className="select select-bordered select-sm w-36"
               value={searchParams.sort}
               onChange={(e) => handleSortChange(e.target.value)}
               disabled={activitiesLoading}
@@ -236,6 +258,30 @@ const Activities: React.FC = () => {
               <option value="oldest">最早发布</option>
               <option value="start_time">按开始时间</option>
               <option value="participants">按参与人数</option>
+            </select>
+
+            <select
+              className="select select-bordered select-sm w-36"
+              value={searchParams.province || ''}
+              onChange={(e) => handleProvinceChange(e.target.value)}
+              disabled={activitiesLoading}
+            >
+              <option value="">全部省份</option>
+              {PROVINCES.map((prov) => (
+                <option key={prov.name} value={prov.name}>{prov.name}</option>
+              ))}
+            </select>
+
+            <select
+              className="select select-bordered select-sm w-36"
+              value={searchParams.city || ''}
+              onChange={(e) => handleCityChange(e.target.value)}
+              disabled={activitiesLoading || !searchParams.province}
+            >
+              <option value="">全部城市</option>
+              {(searchParams.province ? getCitiesByProvince(searchParams.province) : []).map((city) => (
+                <option key={city} value={city}>{city}</option>
+              ))}
             </select>
           </div>
         </div>

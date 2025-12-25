@@ -106,6 +106,8 @@ export class ActivityService {
       keyword,
       status,
       fee_type,
+      province,
+      city,
       sort = 'newest',
     } = queryDto;
     const skip = (page - 1) * limit;
@@ -150,6 +152,14 @@ export class ActivityService {
         )`,
         { keyword: `%${keyword}%` },
       );
+    }
+
+    if (province) {
+      queryBuilder.andWhere('activity.province = :province', { province });
+    }
+
+    if (city) {
+      queryBuilder.andWhere('activity.city = :city', { city });
     }
 
     // 添加排序逻辑

@@ -145,6 +145,8 @@ export interface GetActivitiesRequest {
   keyword?: string;
   status?: ActivityStatus;
   sort?: 'newest' | 'oldest' | 'start_time' | 'participants';
+  province?: string;
+  city?: string;
 }
 
 // 创建评论请求参数
@@ -185,6 +187,8 @@ class ActivityAPI {
     if (params.keyword) queryParams.append('keyword', params.keyword);
     if (params.status) queryParams.append('status', params.status);
     if (params.sort) queryParams.append('sort', params.sort);
+    if (params.province) queryParams.append('province', params.province);
+    if (params.city) queryParams.append('city', params.city);
 
     const queryString = queryParams.toString();
     const url = queryString ? `${ACTIVITY_MODULE}?${queryString}` : ACTIVITY_MODULE;

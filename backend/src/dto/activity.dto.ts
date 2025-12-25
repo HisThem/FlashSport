@@ -181,6 +181,14 @@ export class ActivityQueryDto {
   @IsOptional()
   @IsString()
   sort?: 'newest' | 'oldest' | 'start_time' | 'participants';
+
+  @IsOptional()
+  @IsString()
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
 }
 
 export class CreateCommentDto {
