@@ -44,7 +44,9 @@ export interface Activity {
   name: string;
   description: string;
   cover_image_url?: string;
-  location: string;
+  province: string;
+  city: string;
+  address: string;
   start_time: string;
   end_time: string;
   registration_deadline: string;
@@ -103,7 +105,9 @@ export interface CreateActivityRequest {
   name: string;
   description: string;
   cover_image_url?: string;
-  location: string;
+  province: string;
+  city: string;
+  address: string;
   start_time: string;
   end_time: string;
   registration_deadline: string;
@@ -119,7 +123,9 @@ export interface UpdateActivityRequest {
   name?: string;
   description?: string;
   cover_image_url?: string;
-  location?: string;
+  province?: string;
+  city?: string;
+  address?: string;
   start_time?: string;
   end_time?: string;
   registration_deadline?: string;

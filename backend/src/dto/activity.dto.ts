@@ -28,7 +28,15 @@ export class CreateActivityDto {
 
   @IsString()
   @IsNotEmpty()
-  location: string;
+  province: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city: string;
+
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 
   @IsDateString()
   start_time: string;
@@ -83,7 +91,17 @@ export class UpdateActivityDto {
   @IsOptional()
   @IsString()
   @IsNotEmpty()
-  location?: string;
+  province?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  address?: string;
 
   @IsOptional()
   @IsDateString()

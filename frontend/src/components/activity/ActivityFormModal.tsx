@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Activity, CreateActivityRequest, UpdateActivityRequest, Category, FeeType, ActivityStatus } from '../../api/activity';
 import activityAPI from '../../api/activity';
 import { validateRequired, validateNumber } from '../../utils/validation';
+import { PROVINCES, DEFAULT_PROVINCE, DEFAULT_CITY, getCitiesByProvince } from '../../utils/chinaRegions';
 
 interface ActivityFormModalProps {
   isOpen: boolean;
@@ -25,12 +26,15 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [coverPreviewStatus, setCoverPreviewStatus] = useState<PreviewStatus>('idle');
   const [imagePreviewStatus, setImagePreviewStatus] = useState<Record<number, PreviewStatus>>({});
+  const [availableCities, setAvailableCities] = useState<string[]>(() => getCitiesByProvince(DEFAULT_PROVINCE));
   
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     cover_image_url: '',
-    location: '',
+    province: DEFAULT_PROVINCE,
+    city: DEFAULT_CITY,
+    address: '',
     start_time: '',
     end_time: '',
     registration_deadline: '',
@@ -50,11 +54,16 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       loadCategories();
       if (activity) {
         // 编辑模式：填充表单数据
+        const province = activity.province || DEFAULT_PROVINCE;
+        const cities = getCitiesByProvince(province);
+        setAvailableCities(cities);
         setFormData({
           name: activity.name,
           description: activity.description,
           cover_image_url: activity.cover_image_url || '',
-          location: activity.location,
+          province,
+          city: activity.city || cities[0] || DEFAULT_CITY,
+          address: activity.address || '',
           start_time: activity.start_time.slice(0, 16), // 转换为 datetime-local 格式
           end_time: activity.end_time.slice(0, 16),
           registration_deadline: activity.registration_deadline.slice(0, 16),
@@ -85,11 +94,15 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   };
 
   const resetForm = () => {
+    const cities = getCitiesByProvince(DEFAULT_PROVINCE);
+    setAvailableCities(cities);
     setFormData({
       name: '',
       description: '',
       cover_image_url: '',
-      location: '',
+      province: DEFAULT_PROVINCE,
+      city: cities[0] || DEFAULT_CITY,
+      address: '',
       start_time: '',
       end_time: '',
       registration_deadline: '',
@@ -107,6 +120,31 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'province') {
+      const cities = getCitiesByProvince(value);
+      setAvailableCities(cities);
+      setFormData(prev => ({
+        ...prev,
+        province: value,
+        city: cities.includes(prev.city) ? prev.city : cities[0] || '',
+      }));
+
+      if (errors.city) {
+        setErrors(prev => ({ ...prev, city: '' }));
+      }
+      setErrors(prev => ({ ...prev, province: '' }));
+      return;
+    }
+
+    if (name === 'city') {
+      setFormData(prev => ({ ...prev, city: value }));
+      if (errors.city) {
+        setErrors(prev => ({ ...prev, city: '' }));
+      }
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: name === 'max_participants' || name === 'fee_amount' || name === 'category_id' 
@@ -208,8 +246,14 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     if (!validateRequired(formData.description)) {
       newErrors.description = '活动描述不能为空';
     }
-    if (!validateRequired(formData.location)) {
-      newErrors.location = '活动地点不能为空';
+    if (!validateRequired(formData.province)) {
+      newErrors.province = '请选择省份';
+    }
+    if (!validateRequired(formData.city)) {
+      newErrors.city = '请选择城市';
+    }
+    if (!validateRequired(formData.address)) {
+      newErrors.address = '详细地址不能为空';
     }
     if (!validateRequired(formData.start_time)) {
       newErrors.start_time = '开始时间不能为空';
@@ -265,7 +309,9 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           name: formData.name,
           description: formData.description,
           cover_image_url: formData.cover_image_url || undefined,
-          location: formData.location,
+          province: formData.province,
+          city: formData.city,
+          address: formData.address,
           start_time: formData.start_time,
           end_time: formData.end_time,
           registration_deadline: formData.registration_deadline,
@@ -287,7 +333,9 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           name: formData.name,
           description: formData.description,
           cover_image_url: formData.cover_image_url || undefined,
-          location: formData.location,
+          province: formData.province,
+          city: formData.city,
+          address: formData.address,
           start_time: formData.start_time,
           end_time: formData.end_time,
           registration_deadline: formData.registration_deadline,
@@ -394,17 +442,58 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
             <div>
               <label className="label">
-                <span className="label-text">活动地点 *</span>
+                <span className="label-text">省份 *</span>
+              </label>
+              <select
+                name="province"
+                value={formData.province}
+                onChange={handleInputChange}
+                className={`select select-bordered w-full ${errors.province ? 'select-error' : ''}`}
+              >
+                {PROVINCES.map((province) => (
+                  <option key={province.name} value={province.name}>
+                    {province.name}
+                  </option>
+                ))}
+              </select>
+              {errors.province && <div className="text-error text-sm mt-1">{errors.province}</div>}
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">城市 *</span>
+              </label>
+              <select
+                name="city"
+                value={formData.city}
+                onChange={handleInputChange}
+                className={`select select-bordered w-full ${errors.city ? 'select-error' : ''}`}
+              >
+                <option value="" disabled>
+                  请选择城市
+                </option>
+                {availableCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              {errors.city && <div className="text-error text-sm mt-1">{errors.city}</div>}
+            </div>
+
+            <div>
+              <label className="label">
+                <span className="label-text">详细地址 *</span>
               </label>
               <input
                 type="text"
-                name="location"
-                value={formData.location}
+                name="address"
+                value={formData.address}
                 onChange={handleInputChange}
-                className={`input input-bordered w-full ${errors.location ? 'input-error' : ''}`}
-                placeholder="请输入活动地点"
+                className={`input input-bordered w-full ${errors.address ? 'input-error' : ''}`}
+                placeholder="请输入街道、社区或详细地点"
               />
-              {errors.location && <div className="text-error text-sm mt-1">{errors.location}</div>}
+              {errors.address && <div className="text-error text-sm mt-1">{errors.address}</div>}
             </div>
           </div>
 

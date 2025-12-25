@@ -102,3 +102,8 @@ export function canUserCancelEnrollment(activity: Activity): boolean {
 export function isRegistrationExpired(registrationDeadline: string): boolean {
   return new Date(registrationDeadline) <= new Date();
 }
+
+export function formatActivityLocation(activity: Pick<Activity, 'province' | 'city' | 'address'>): string {
+  const parts = [activity.province, activity.city, activity.address].filter(Boolean);
+  return parts.join(' ') || '未填写';
+}

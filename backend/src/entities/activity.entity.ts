@@ -44,8 +44,14 @@ export class Activity {
   @Column({ nullable: true })
   cover_image_url?: string;
 
-  @Column()
-  location: string;
+  @Column({ default: '江苏' })
+  province: string;
+
+  @Column({ default: '苏州' })
+  city: string;
+
+  @Column({ default: '' })
+  address: string;
 
   @Column('datetime')
   start_time: Date;

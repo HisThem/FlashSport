@@ -141,7 +141,13 @@ export class ActivityService {
 
     if (keyword) {
       queryBuilder.andWhere(
-        '(activity.name LIKE :keyword OR activity.description LIKE :keyword OR activity.location LIKE :keyword)',
+        `(
+          activity.name LIKE :keyword
+          OR activity.description LIKE :keyword
+          OR activity.province LIKE :keyword
+          OR activity.city LIKE :keyword
+          OR activity.address LIKE :keyword
+        )`,
         { keyword: `%${keyword}%` },
       );
     }
@@ -172,6 +178,7 @@ export class ActivityService {
     queryBuilder.skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
+    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
     const totalPages = Math.ceil(total / limit);
 
     // 批量更新活动状态
@@ -205,6 +212,8 @@ export class ActivityService {
     if (!activity) {
       throw new NotFoundException('活动不存在');
     }
+
+    await this.ensureLocationDefaults(activity);
 
     // 自动更新活动状态
     await this.updateActivityStatusByTime(activity);
@@ -250,6 +259,26 @@ export class ActivityService {
     if (newStatus && newStatus !== activity.status) {
       activity.status = newStatus;
       await this.activityRepository.save(activity);
+    }
+  }
+
+  private async ensureLocationDefaults(activity: Activity): Promise<void> {
+    const patch: Partial<Activity> = {};
+
+    if (!activity.province) {
+      patch.province = '江苏';
+    }
+
+    if (!activity.city) {
+      patch.city = '苏州';
+    }
+
+    if (!activity.address) {
+      patch.address = '';
+    }
+
+    if (Object.keys(patch).length > 0) {
+      await this.activityRepository.update(activity.id, patch);
     }
   }
 
@@ -589,6 +618,7 @@ export class ActivityService {
     queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
+    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -644,6 +674,7 @@ export class ActivityService {
     queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
+    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -707,7 +738,13 @@ export class ActivityService {
     // 搜索条件
     if (keyword) {
       query = query.where(
-        'activity.name LIKE :keyword OR activity.description LIKE :keyword',
+        `
+          activity.name LIKE :keyword
+          OR activity.description LIKE :keyword
+          OR activity.province LIKE :keyword
+          OR activity.city LIKE :keyword
+          OR activity.address LIKE :keyword
+        `,
         { keyword: `%${keyword}%` },
       );
     }
@@ -743,6 +780,10 @@ export class ActivityService {
         .getRawAndEntities(),
       query.getCount(),
     ]);
+
+    await Promise.all(
+      activities.entities.map((activity) => this.ensureLocationDefaults(activity)),
+    );
 
     // 将 enrollment_count 添加到活动对象中
     const activitiesWithCount = activities.entities.map((activity, index) => {

@@ -1,6 +1,6 @@
 import Avatar from '../Avatar';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
-import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus } from '../../utils/activity';
+import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, formatActivityLocation } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
 import React from 'react';
 
@@ -141,7 +141,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-base-content/80">{enrichedActivity.location}</span>
+            <span className="text-base-content/80">{formatActivityLocation(enrichedActivity)}</span>
           </div>
           
           <div className="flex items-center gap-2">

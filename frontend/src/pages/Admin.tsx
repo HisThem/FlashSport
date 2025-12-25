@@ -4,6 +4,7 @@ import { useToast } from '../components/Toast';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
 import activityAPI, { Activity, ActivityStatus, GetActivitiesRequest, Category } from '../api/activity';
 import { useCurrentUser } from '../hooks/useAuth';
+import { formatActivityLocation } from '../utils/activity';
 
 const Admin: React.FC = () => {
   const { user: currentUser } = useCurrentUser();
@@ -295,7 +296,7 @@ const Admin: React.FC = () => {
                           )}
                           <div>
                             <div className="font-bold">{activity.name}</div>
-                            <div className="text-sm opacity-50">{activity.location}</div>
+                            <div className="text-sm opacity-50">{formatActivityLocation(activity)}</div>
                           </div>
                         </div>
                       </td>

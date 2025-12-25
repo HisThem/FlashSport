@@ -3,7 +3,7 @@ import { Activity, Comment, Enrollment, ActivityStatus, FeeType } from '../../ap
 import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
 import { formatDate, getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
-import { enrichActivityWithEnrollmentStatus, isRegistrationExpired } from '../../utils/activity';
+import { enrichActivityWithEnrollmentStatus, isRegistrationExpired, formatActivityLocation } from '../../utils/activity';
 import Avatar from '../Avatar';
 
 interface ActivityDetailModalProps {
@@ -172,7 +172,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">地点:</span>
-                <span>{enrichedActivity.location}</span>
+                <span>{formatActivityLocation(enrichedActivity)}</span>
               </div>
 
               <div className="flex items-center gap-2">
