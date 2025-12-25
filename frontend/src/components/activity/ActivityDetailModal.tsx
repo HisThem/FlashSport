@@ -136,7 +136,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   return (
     <>
     <div className="modal modal-open pt-20">
-      <div className="modal-box relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="modal-box modal-bounce relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
         <button 
           className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
           onClick={onClose}

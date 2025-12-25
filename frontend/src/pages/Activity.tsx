@@ -257,15 +257,20 @@ const Activities: React.FC = () => {
             {activities.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {activities.map(activity => (
-                    <ActivityCard
+                  {activities.map((activity, index) => (
+                    <div
                       key={activity.id}
-                      activity={activity}
-                      onViewDetail={handleViewDetail}
-                      onEnroll={handleEnroll}
-                      onCancelEnrollment={handleCancelEnrollment}
-                      isOwner={currentUser?.id === activity.organizer_id}
-                    />
+                      className="activity-fade-up"
+                      style={{ animationDelay: `${index * 80}ms` }}
+                    >
+                      <ActivityCard
+                        activity={activity}
+                        onViewDetail={handleViewDetail}
+                        onEnroll={handleEnroll}
+                        onCancelEnrollment={handleCancelEnrollment}
+                        isOwner={currentUser?.id === activity.organizer_id}
+                      />
+                    </div>
                   ))}
                 </div>
 

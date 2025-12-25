@@ -102,8 +102,25 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     return canUserCancelEnrollment(enrichedActivity);
   };
 
+  const handleCardClick = () => {
+    onViewDetail(enrichedActivity);
+  };
+
+  const handleCardKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onViewDetail(enrichedActivity);
+    }
+  };
+
   return (
-    <div className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
+    <div
+      className="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col cursor-pointer"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role="button"
+      tabIndex={0}
+    >
       <figure className="relative flex-shrink-0">
         <img 
           src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
@@ -184,7 +201,10 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         </div>
         
         {showActions && (
-          <div className="card-actions justify-end mt-auto pt-4">
+          <div
+            className="card-actions justify-end mt-auto pt-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button 
               className="btn btn-outline btn-sm"
               onClick={() => onViewDetail(enrichedActivity)}

@@ -98,4 +98,40 @@
   .toast-leave {
     animation: toastLeave 0.18s ease-in forwards;
   }
+
+  /* Modal 弹跳进入动画 */
+  @keyframes modalBounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.94) translateY(8px);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.02) translateY(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .modal-bounce {
+    animation: modalBounceIn 0.18s cubic-bezier(0.32, 1.2, 0.4, 1) both;
+  }
+
+  /* 活动卡片入场动画 */
+  @keyframes activityFadeUp {
+    0% {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .activity-fade-up {
+    animation: activityFadeUp 0.4s ease-out both;
+  }
 }
