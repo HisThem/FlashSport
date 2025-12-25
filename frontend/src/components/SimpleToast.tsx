@@ -60,7 +60,7 @@ const SimpleToast: React.FC<SimpleToastProps> = ({ message, type, onClose }) => 
   };
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[99999]">
+    <div className="fixed left-1/2 transform -translate-x-1/2 z-[99999] top-5rem">
       <div className={`alert ${getToastClass()} shadow-lg min-w-max`}>
         {getIcon()}
         <span className="font-medium">{message}</span>
