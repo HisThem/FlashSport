@@ -86,6 +86,9 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
   const getStatusText = (activity: Activity) => {
     const status = activity.status;
+    const now = new Date();
+    const startTime = new Date(activity.start_time);
+    const endTime = new Date(activity.end_time);
     
     // 如果状态是报名中，但报名已过期，显示已过期
     if (status === ActivityStatus.RECRUITING && isRegistrationExpired(activity.registration_deadline)) {
@@ -95,9 +98,17 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     switch (status) {
       case ActivityStatus.PREPARING: return '筹备中';
       case ActivityStatus.RECRUITING: return '报名中';
+      case ActivityStatus.REGISTRATION_CLOSED: return '报名已截止';
+      case ActivityStatus.ONGOING: return '进行中';
       case ActivityStatus.FINISHED: return '已结束';
       case ActivityStatus.CANCELLED: return '已取消';
-      default: return '未知状态';
+      default:
+        // 回退到基于时间的推断
+        if (now > endTime) return '已结束';
+        if (now >= startTime && now <= endTime) return '进行中';
+        if (now > new Date(activity.registration_deadline) && now < startTime) return '报名已截止';
+        if (now <= new Date(activity.registration_deadline)) return '报名中';
+        return '筹备中';
     }
   };
 
@@ -154,13 +165,17 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="font-medium">状态:</span>
-                <span className={`badge ${
-                  enrichedActivity.status === ActivityStatus.RECRUITING && isRegistrationExpired(enrichedActivity.registration_deadline) ? 'badge-warning' :
-                  enrichedActivity.status === ActivityStatus.RECRUITING ? 'badge-success' :
-                  enrichedActivity.status === ActivityStatus.PREPARING ? 'badge-info' :
-                  enrichedActivity.status === ActivityStatus.FINISHED ? 'badge-neutral' :
-                  'badge-error'
-                }`}>
+                <span className={`badge ${(() => {
+                  if (enrichedActivity.status === ActivityStatus.RECRUITING) {
+                    return isRegistrationExpired(enrichedActivity.registration_deadline) ? 'badge-warning' : 'badge-success';
+                  }
+                  if (enrichedActivity.status === ActivityStatus.REGISTRATION_CLOSED) return 'badge-secondary';
+                  if (enrichedActivity.status === ActivityStatus.PREPARING) return 'badge-info';
+                  if (enrichedActivity.status === ActivityStatus.ONGOING) return 'badge-warning';
+                  if (enrichedActivity.status === ActivityStatus.FINISHED) return 'badge-neutral';
+                  if (enrichedActivity.status === ActivityStatus.CANCELLED) return 'badge-error';
+                  return 'badge-ghost';
+                })()}`}>
                   {getStatusText(enrichedActivity)}
                 </span>
               </div>
@@ -227,12 +242,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
             {/* 操作按钮 */}
             <div className="space-y-2">
-              {isOwner ? (
+              {isOwner && onEdit ? (
                 <>
                   {enrichedActivity.status === ActivityStatus.RECRUITING && (
                     <button 
                       className="btn btn-primary w-full"
-                      onClick={() => onEdit && onEdit(enrichedActivity)}
+                      onClick={() => onEdit(enrichedActivity)}
                     >
                       编辑活动
                     </button>
