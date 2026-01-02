@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, CreateActivityRequest, UpdateActivityRequest, Category, FeeType, ActivityStatus } from '../../api/activity';
+import { Activity, CreateActivityRequest, UpdateActivityRequest, Category, FeeType } from '../../api/activity';
 import activityAPI from '../../api/activity';
 import { validateRequired, validateNumber } from '../../utils/validation';
 import { PROVINCES, DEFAULT_PROVINCE, DEFAULT_CITY, getCitiesByProvince } from '../../utils/chinaRegions';
@@ -42,7 +42,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     fee_type: FeeType.FREE,
     fee_amount: 0,
     category_id: 0,
-    status: ActivityStatus.RECRUITING,
     images: [] as string[]
   });
 
@@ -71,7 +70,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           fee_type: activity.fee_type,
           fee_amount: activity.fee_amount,
           category_id: activity.category_id,
-          status: activity.status,
           images: activity.images?.map(img => img.image_url) || []
         });
       } else {
@@ -110,7 +108,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       fee_type: FeeType.FREE,
       fee_amount: 0,
       category_id: categories.length > 0 ? categories[0].id : 0,
-      status: ActivityStatus.RECRUITING,
       images: []
     });
     setErrors({});
@@ -319,7 +316,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           fee_type: formData.fee_type,
           fee_amount: formData.fee_amount,
           category_id: formData.category_id,
-          status: formData.status,
           image_urls: formData.images
         };
         if (isAdminMode) {
@@ -659,26 +655,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
               </div>
             )}
           </div>
-
-          {/* 活动状态（仅编辑模式） */}
-          {isEditMode && (
-            <div>
-              <label className="label">
-                <span className="label-text">活动状态</span>
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="select select-bordered w-full"
-              >
-                <option value={ActivityStatus.PREPARING}>筹备中</option>
-                <option value={ActivityStatus.RECRUITING}>报名中</option>
-                <option value={ActivityStatus.FINISHED}>已结束</option>
-                <option value={ActivityStatus.CANCELLED}>已取消</option>
-              </select>
-            </div>
-          )}
 
           {/* 活动图片 */}
           <div>

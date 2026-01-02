@@ -225,24 +225,6 @@ export class ActivityController {
     };
   }
 
-  @Post(':id/status')
-  @UseGuards(JwtAuthGuard)
-  async updateActivityStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: AuthenticatedRequest,
-    @Body() body: { status: string },
-  ): Promise<ApiResponse> {
-    await this.activityService.updateActivityStatus(
-      id,
-      req.user.id,
-      body.status,
-    );
-    return {
-      success: true,
-      message: '活动状态更新成功',
-    };
-  }
-
   // 管理员接口
   @Get('admin/all')
   @UseGuards(JwtAuthGuard)

@@ -140,7 +140,6 @@ const Admin: React.FC = () => {
   // 获取状态显示文本
   const getStatusText = (status: ActivityStatus) => {
     const statusMap = {
-      [ActivityStatus.PREPARING]: '筹备中',
       [ActivityStatus.RECRUITING]: '报名中',
       [ActivityStatus.REGISTRATION_CLOSED]: '报名已截止',
       [ActivityStatus.ONGOING]: '进行中',
@@ -153,8 +152,6 @@ const Admin: React.FC = () => {
   // 获取状态样式
   const getStatusStyle = (status: ActivityStatus) => {
     switch (status) {
-      case ActivityStatus.PREPARING:
-        return 'badge-info';
       case ActivityStatus.RECRUITING:
         return 'badge-success';
       case ActivityStatus.REGISTRATION_CLOSED:
@@ -232,7 +229,6 @@ const Admin: React.FC = () => {
                 })}
               >
                 <option value="">全部状态</option>
-                <option value={ActivityStatus.PREPARING}>筹备中</option>
                 <option value={ActivityStatus.RECRUITING}>报名中</option>
                 <option value={ActivityStatus.REGISTRATION_CLOSED}>报名已截止</option>
                 <option value={ActivityStatus.ONGOING}>进行中</option>

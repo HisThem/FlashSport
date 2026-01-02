@@ -3,7 +3,6 @@ import { ACTIVITY_MODULE } from './_prefix';
 
 // 活动状态枚举
 export enum ActivityStatus {
-  PREPARING = 'preparing',          // 筹备中
   RECRUITING = 'recruiting',        // 报名中
   REGISTRATION_CLOSED = 'registration_closed', // 报名已截止
   ONGOING = 'ongoing',              // 进行中
@@ -118,7 +117,6 @@ export interface UpdateActivityRequest {
   fee_type?: FeeType;
   fee_amount?: number;
   category_id?: number;
-  status?: ActivityStatus;
   image_urls?: string[];
 }
 
@@ -265,20 +263,6 @@ class ActivityAPI {
     
     if (!response.success) {
       throw new Error(response.message || '取消报名失败');
-    }
-  }
-
-  /**
-   * 更新活动状态
-   * @param activityId 活动ID
-   * @param status 新状态
-   * @returns Promise<void>
-   */
-  async updateActivityStatus(activityId: number, status: ActivityStatus): Promise<void> {
-    const response: ApiResponse = await request.post(`${ACTIVITY_MODULE}/${activityId}/status`, { status });
-    
-    if (!response.success) {
-      throw new Error(response.message || '更新活动状态失败');
     }
   }
 

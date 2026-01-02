@@ -79,6 +79,23 @@ const MyActivities: React.FC = () => {
     }
   };
 
+  const canEditActivity = (activity: Activity) => {
+    const now = new Date();
+    const startTime = new Date(activity.start_time);
+    
+    // 活动开始后不能编辑
+    if (now >= startTime) {
+      return false;
+    }
+    
+    // 已取消或已结束的活动不能编辑
+    if (activity.status === 'cancelled' || activity.status === 'finished') {
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleCancelActivity = async (activity: Activity) => {
     const currentTime = new Date();
     const activityStartTime = new Date(activity.start_time);
@@ -111,47 +128,6 @@ const MyActivities: React.FC = () => {
     }
   };
 
-  const handleUpdateActivityStatus = async (activity: Activity, newStatus: string) => {
-    // 检查是否可以更改状态
-    const now = new Date();
-    const endTime = new Date(activity.end_time);
-    
-    if (now > endTime) {
-      toast.error('活动结束后不能更改活动状态');
-      return;
-    }
-
-    if (activity.status === 'cancelled') {
-      toast.error('已取消的活动不能更改状态');
-      return;
-    }
-
-    try {
-      await activityAPI.updateActivityStatus(activity.id, newStatus as any);
-      await updateSingleActivityData(activity.id);
-      toast.success('活动状态更新成功');
-    } catch (error: any) {
-      toast.error(error.message || '更新活动状态失败');
-    }
-  };
-
-  const canEditActivity = (activity: Activity) => {
-    const now = new Date();
-    const startTime = new Date(activity.start_time);
-    
-    // 活动开始后不能编辑
-    if (now >= startTime) {
-      return false;
-    }
-    
-    // 已取消或已结束的活动不能编辑
-    if (activity.status === 'cancelled' || activity.status === 'finished') {
-      return false;
-    }
-    
-    return true;
-  };
-
   const canCancelActivity = (activity: Activity) => {
     const now = new Date();
     const startTime = new Date(activity.start_time);
@@ -161,23 +137,9 @@ const MyActivities: React.FC = () => {
       return false;
     }
     
-    // 只有筹备中、报名中或报名已截止的活动可以取消
-    return activity.status === 'preparing' || 
-           activity.status === 'recruiting' || 
+    // 只有报名中或报名已截止的活动可以取消
+    return activity.status === 'recruiting' || 
            activity.status === 'registration_closed';
-  };
-
-  const canChangeStatus = (activity: Activity) => {
-    const now = new Date();
-    const endTime = new Date(activity.end_time);
-    
-    // 活动结束后不能更改状态
-    if (now > endTime) {
-      return false;
-    }
-    
-    // 已取消的活动不能更改状态
-    return activity.status !== 'cancelled';
   };
 
   const updateSingleActivityData = async (activityId: number) => {
@@ -307,12 +269,11 @@ const MyActivities: React.FC = () => {
                   onEdit={activeTab === 'published' ? handleEditActivity : undefined}
                   onCancelEnrollment={activeTab === 'enrolled' ? handleCancelEnrollment : undefined}
                   onCancelActivity={activeTab === 'published' ? handleCancelActivity : undefined}
-                  onUpdateActivityStatus={activeTab === 'published' ? handleUpdateActivityStatus : undefined}
                   isOwner={activeTab === 'published'}
                   showActions={true}
                   canEditActivity={canEditActivity}
                   canCancelActivity={canCancelActivity}
-                  canChangeStatus={canChangeStatus}
+                  showActivityFinishedButton={activeTab === 'enrolled'}
                 />
               </div>
             ))}

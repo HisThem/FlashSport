@@ -259,12 +259,9 @@ export class ActivityService {
     } else if (now > registrationDeadline && now < startTime) {
       // 报名截止后，活动开始前
       newStatus = ActivityStatus.REGISTRATION_CLOSED;
-    } else if (
-      now <= registrationDeadline &&
-      activity.status === ActivityStatus.PREPARING
-    ) {
-      // 报名期间，如果当前是筹备中，可能需要手动设置为报名中
-      // 这里不自动设置，保持手动控制
+    } else if (now <= registrationDeadline) {
+      // 报名期间
+      newStatus = ActivityStatus.RECRUITING;
     }
 
     // 如果需要更新状态且状态不同，则更新
@@ -520,42 +517,6 @@ export class ActivityService {
         status: EnrollmentStatus.CANCELLED,
       },
     );
-  }
-
-  async updateActivityStatus(
-    activityId: number,
-    userId: number,
-    status: string,
-  ): Promise<void> {
-    const activity = await this.getActivityById(activityId);
-
-    // 检查权限：只有活动组织者可以更改状态
-    if (activity.organizer_id !== userId) {
-      throw new ForbiddenException('只有活动组织者可以更改活动状态');
-    }
-
-    // 验证状态值
-    if (!Object.values(ActivityStatus).includes(status as ActivityStatus)) {
-      throw new BadRequestException('无效的活动状态');
-    }
-
-    // 检查活动结束时间：活动结束后不能更改状态
-    if (new Date() > activity.end_time) {
-      throw new ForbiddenException('活动结束后不能更改活动状态');
-    }
-
-    // 状态转换逻辑检查
-    const currentStatus = activity.status;
-    const newStatus = status as ActivityStatus;
-
-    // 已取消的活动不能改变状态
-    if (currentStatus === ActivityStatus.CANCELLED) {
-      throw new BadRequestException('已取消的活动不能更改状态');
-    }
-
-    // 更新状态
-    activity.status = newStatus;
-    await this.activityRepository.save(activity);
   }
 
   async getCategories(): Promise<Category[]> {

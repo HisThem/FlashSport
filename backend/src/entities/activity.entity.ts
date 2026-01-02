@@ -14,7 +14,6 @@ import { Enrollment } from './enrollment.entity';
 import { ActivityImage } from './activity-image.entity';
 
 export enum ActivityStatus {
-  PREPARING = 'preparing',
   RECRUITING = 'recruiting',
   REGISTRATION_CLOSED = 'registration_closed',
   ONGOING = 'ongoing',
@@ -67,7 +66,7 @@ export class Activity {
   @Column({
     type: 'varchar',
     enum: ActivityStatus,
-    default: ActivityStatus.PREPARING,
+    default: ActivityStatus.RECRUITING,
   })
   status: ActivityStatus;
 

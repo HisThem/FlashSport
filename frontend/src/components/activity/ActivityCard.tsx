@@ -12,12 +12,11 @@ interface ActivityCardProps {
   onCancelEnrollment?: (activityId: number) => void;
   onEdit?: (activity: Activity) => void;
   onCancelActivity?: (activity: Activity) => void;
-  onUpdateActivityStatus?: (activity: Activity, newStatus: string) => void;
   showActions?: boolean;
   isOwner?: boolean;
   canEditActivity?: (activity: Activity) => boolean;
   canCancelActivity?: (activity: Activity) => boolean;
-  canChangeStatus?: (activity: Activity) => boolean;
+  showActivityFinishedButton?: boolean;
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
@@ -27,12 +26,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   onCancelEnrollment,
   onEdit,
   onCancelActivity,
-  onUpdateActivityStatus,
   showActions = true,
   isOwner = false,
   canEditActivity,
   canCancelActivity,
-  canChangeStatus
+  showActivityFinishedButton = false
 }) => {
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
@@ -57,8 +55,6 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         return <div className="badge badge-secondary">报名已截止</div>;
       case ActivityStatus.RECRUITING:
         return <div className="badge badge-success">报名中</div>;
-      case ActivityStatus.PREPARING:
-        return <div className="badge badge-info">筹备中</div>;
       default:
         // 如果 status 未定义或不匹配，回退到时间基础判断
         if (now > endTime) {
@@ -73,8 +69,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         if (now <= registrationDeadline) {
           return <div className="badge badge-success">报名中</div>;
         }
-        // 默认为筹备中
-        return <div className="badge badge-info">筹备中</div>;
+        // 默认为报名中
+        return <div className="badge badge-success">报名中</div>;
     }
   };
 
@@ -202,10 +198,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 className="text-base-content/80 cursor-pointer hover:text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/profile/${enrichedActivity.organizer.id}`);
+                  if (enrichedActivity.organizer) {
+                    navigate(`/profile/${enrichedActivity.organizer.id}`);
+                  }
                 }}
               >
-                {enrichedActivity.organizer.username}
+                {enrichedActivity.organizer?.username}
               </span>
             </div>
           )}
@@ -213,175 +211,69 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
         
         {showActions && (
           <div
-            className="card-actions justify-end mt-auto pt-4"
+            className="card-actions justify-end mt-auto pt-4 gap-2 flex-wrap"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
-              className="btn btn-outline btn-sm"
-              onClick={() => onViewDetail(enrichedActivity)}
-            >
-              查看详情
-            </button>
-            
-            {isOwner && (onEdit || onCancelActivity || onUpdateActivityStatus) ? (
+            {isOwner && (onEdit || onCancelActivity) ? (
               <>
-                {/* 管理按钮下拉菜单 */}
-                <div className="dropdown dropdown-top dropdown-end">
-                  <div tabIndex={0} role="button" className="btn btn-circle btn-sm btn-primary">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
-                    </svg>
-                  </div>
-                  <ul tabIndex={0} className="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-lg border mb-2">
-                    {/* 编辑活动 - 只有提供了 onEdit 回调才显示 */}
-                    {onEdit && (
-                      <li>
-                        <button
-                          onClick={() => onEdit(enrichedActivity)}
-                          disabled={!canEditActivity || !canEditActivity(enrichedActivity)}
-                          className={`flex items-center gap-2 ${!canEditActivity || !canEditActivity(enrichedActivity) ? 'text-base-content/50' : 'hover:bg-base-200'}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          编辑活动
-                          {(!canEditActivity || !canEditActivity(enrichedActivity)) && <span className="text-xs opacity-60">(已截止)</span>}
-                        </button>
-                      </li>
-                    )}
-                    
-                    {/* 取消活动 - 只有提供了 onCancelActivity 回调才显示 */}
-                    {onCancelActivity && (
-                      <li>
-                        <button
-                          onClick={() => onCancelActivity(enrichedActivity)}
-                          disabled={!canCancelActivity || !canCancelActivity(enrichedActivity)}
-                          className={`flex items-center gap-2 ${
-                            !canCancelActivity || !canCancelActivity(enrichedActivity)
-                              ? 'text-base-content/50' 
-                              : 'text-error hover:bg-error/10'
-                          }`}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          取消活动
-                          {(!canCancelActivity || !canCancelActivity(enrichedActivity)) && <span className="text-xs opacity-60">(不可取消)</span>}
-                        </button>
-                      </li>
-                    )}
-                    
-                    {/* 结束活动 - 只有提供了 onUpdateActivityStatus 回调且活动未结束才显示 */}
-                    {onUpdateActivityStatus && enrichedActivity.status !== 'finished' && enrichedActivity.status !== 'cancelled' && (
-                      <li>
-                        <button
-                          onClick={() => {
-                            if (confirm('确定要结束这个活动吗？结束后无法撤回，活动将被标记为已完成状态。')) {
-                              onUpdateActivityStatus(enrichedActivity, 'finished');
-                            }
-                          }}
-                          className="flex items-center gap-2 text-warning hover:bg-warning/10"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          结束活动
-                        </button>
-                      </li>
-                    )}
-                    
-                    {/* 更改状态 - 只有提供了 onUpdateActivityStatus 回调才显示 */}
-                    {onUpdateActivityStatus && canChangeStatus && canChangeStatus(enrichedActivity) && (
-                      <>
-                        <li><hr className="my-1" /></li>
-                        <li className="menu-title">
-                          <span className="text-xs">更改状态</span>
-                        </li>
-                        {enrichedActivity.status !== 'preparing' && (
-                          <li>
-                            <button 
-                              onClick={() => onUpdateActivityStatus(enrichedActivity, 'preparing')}
-                              className="flex items-center gap-2 hover:bg-base-200"
-                            >
-                              <span className="badge badge-info badge-xs"></span>
-                              筹备中
-                            </button>
-                          </li>
-                        )}
-                        {enrichedActivity.status !== 'recruiting' && (
-                          <li>
-                            <button 
-                              onClick={() => onUpdateActivityStatus(enrichedActivity, 'recruiting')}
-                              className="flex items-center gap-2 hover:bg-base-200"
-                            >
-                              <span className="badge badge-success badge-xs"></span>
-                              报名中
-                            </button>
-                          </li>
-                        )}
-                        {enrichedActivity.status !== 'registration_closed' && (
-                          <li>
-                            <button 
-                              onClick={() => onUpdateActivityStatus(enrichedActivity, 'registration_closed')}
-                              className="flex items-center gap-2 hover:bg-base-200"
-                            >
-                              <span className="badge badge-secondary badge-xs"></span>
-                              报名已截止
-                            </button>
-                          </li>
-                        )}
-                        {enrichedActivity.status !== 'ongoing' && (
-                          <li>
-                            <button 
-                              onClick={() => onUpdateActivityStatus(enrichedActivity, 'ongoing')}
-                              className="flex items-center gap-2 hover:bg-base-200"
-                            >
-                              <span className="badge badge-warning badge-xs"></span>
-                              进行中
-                            </button>
-                          </li>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* 无操作提示 - 当没有任何可用操作时显示 */}
-                    {(!onEdit || !canEditActivity || !canEditActivity(enrichedActivity)) && 
-                     (!onUpdateActivityStatus || !canChangeStatus || !canChangeStatus(enrichedActivity)) && 
-                     (!onCancelActivity || !canCancelActivity || !canCancelActivity(enrichedActivity)) && (
-                      <>
-                        <li><hr className="my-1" /></li>
-                        <li>
-                          <span className="text-base-content/60 text-sm">
-                            {new Date() > new Date(enrichedActivity.end_time) 
-                              ? '活动结束后不可管理'
-                              : new Date() >= new Date(enrichedActivity.start_time)
-                              ? '活动进行中不可编辑'
-                              : '无可用操作'}
-                          </span>
-                        </li>
-                      </>
-                    )}
-                  </ul>
-                </div>
-              </>
-            ) : (
-              <>
-                {canEnroll() && onEnroll && (
-                  <button 
-                    className="btn btn-primary btn-sm"
-                    onClick={() => onEnroll(enrichedActivity.id)}
+                {/* 编辑活动按钮 */}
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(enrichedActivity)}
+                    disabled={!canEditActivity || !canEditActivity(enrichedActivity)}
+                    className={`btn btn-sm ${!canEditActivity || !canEditActivity(enrichedActivity) ? 'btn-disabled' : 'btn-outline'}`}
                   >
-                    立即报名
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    编辑
                   </button>
                 )}
                 
-                {canCancelEnrollment() && onCancelEnrollment && (
-                  <button 
-                    className="btn btn-error btn-sm"
-                    onClick={() => onCancelEnrollment(enrichedActivity.id)}
+                {/* 取消活动按钮 */}
+                {onCancelActivity && (
+                  <button
+                    onClick={() => onCancelActivity(enrichedActivity)}
+                    disabled={!canCancelActivity || !canCancelActivity(enrichedActivity)}
+                    className={`btn btn-sm ${!canCancelActivity || !canCancelActivity(enrichedActivity) ? 'btn-disabled' : 'btn-error'}`}
                   >
-                    取消报名
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    取消
                   </button>
+                )}
+              </>
+            ) : (
+              <>
+                {/* 活动已结束按钮 - 在"我参与的活动"中显示 */}
+                {showActivityFinishedButton && enrichedActivity.status === ActivityStatus.FINISHED ? (
+                  <button 
+                    className="btn btn-sm btn-disabled w-full sm:w-auto"
+                    disabled
+                  >
+                    活动已结束
+                  </button>
+                ) : (
+                  <>
+                    {canEnroll() && onEnroll && (
+                      <button 
+                        className="btn btn-primary btn-sm flex-1 sm:flex-none"
+                        onClick={() => onEnroll(enrichedActivity.id)}
+                      >
+                        立即报名
+                      </button>
+                    )}
+                    
+                    {canCancelEnrollment() && onCancelEnrollment && (
+                      <button 
+                        className="btn btn-error btn-sm flex-1 sm:flex-none"
+                        onClick={() => onCancelEnrollment(enrichedActivity.id)}
+                      >
+                        取消报名
+                      </button>
+                    )}
+                  </>
                 )}
               </>
             )}

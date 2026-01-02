@@ -52,10 +52,6 @@ export class CreateActivityDto {
   @Type(() => Number)
   max_participants: number;
 
-  @IsOptional()
-  @IsEnum(ActivityStatus)
-  status?: ActivityStatus;
-
   @IsEnum(FeeType)
   fee_type: FeeType;
 
@@ -120,10 +116,6 @@ export class UpdateActivityDto {
   @IsPositive()
   @Type(() => Number)
   max_participants?: number;
-
-  @IsOptional()
-  @IsEnum(ActivityStatus)
-  status?: ActivityStatus;
 
   @IsOptional()
   @IsEnum(FeeType)

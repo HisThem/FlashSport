@@ -76,7 +76,6 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     }
     
     switch (status) {
-      case ActivityStatus.PREPARING: return '筹备中';
       case ActivityStatus.RECRUITING: return '报名中';
       case ActivityStatus.REGISTRATION_CLOSED: return '报名已截止';
       case ActivityStatus.ONGOING: return '进行中';
@@ -88,7 +87,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
         if (now >= startTime && now <= endTime) return '进行中';
         if (now > new Date(activity.registration_deadline) && now < startTime) return '报名已截止';
         if (now <= new Date(activity.registration_deadline)) return '报名中';
-        return '筹备中';
+        return '报名中';
     }
   };
 
@@ -139,7 +138,6 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                     return isRegistrationExpired(enrichedActivity.registration_deadline) ? 'badge-warning' : 'badge-success';
                   }
                   if (enrichedActivity.status === ActivityStatus.REGISTRATION_CLOSED) return 'badge-secondary';
-                  if (enrichedActivity.status === ActivityStatus.PREPARING) return 'badge-info';
                   if (enrichedActivity.status === ActivityStatus.ONGOING) return 'badge-warning';
                   if (enrichedActivity.status === ActivityStatus.FINISHED) return 'badge-neutral';
                   if (enrichedActivity.status === ActivityStatus.CANCELLED) return 'badge-error';
