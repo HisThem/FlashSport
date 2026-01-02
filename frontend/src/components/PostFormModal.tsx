@@ -173,11 +173,12 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
     searchResults.find((a) => a.id === selectedActivityId);
 
   return (
-    <div className="modal modal-open pt-[5rem]">
-      <div className="modal-box w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
+    <div className="modal modal-open pt-[5rem] z-50">
+      <div className="modal-box modal-bounce w-full max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 bg-base-100 border-b border-base-200 p-6 flex justify-between items-center z-10">
           <div>
-            <h3 className="font-bold text-xl">
+            <h3 className="font-bold text-2xl">
               {editingPost ? '编辑帖子' : '分享新的体验'}
             </h3>
             <p className="text-sm text-base-content/60 mt-1">
@@ -193,17 +194,17 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
           {/* 内容输入 */}
-          <div className="form-control w-full">
+          <div className="form-control w-full max-w-2xl mx-auto">
             <div className="flex justify-between items-center mb-2">
               <label className="label p-0">
-                <span className="label-text font-semibold text-base-content">内容 *</span>
+                <span className="label-text font-semibold text-base-content text-lg">内容 *</span>
               </label>
               <span className="text-sm text-gray-400">{content.length} / 5000</span>
             </div>
             <textarea
-              className="textarea textarea-bordered h-32 resize-none focus:textarea-primary w-full"
+              className="textarea textarea-bordered h-40 resize-none focus:textarea-primary w-full text-base"
               placeholder="分享你的运动体验、建议或故事..."
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -212,9 +213,9 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           </div>
 
           {/* 配图上传 */}
-          <div className="form-control">
+          <div className="form-control max-w-2xl mx-auto w-full">
             <label className="label">
-              <span className="label-text font-semibold text-base-content">配图（可选）</span>
+              <span className="label-text font-semibold text-base-content text-lg">配图（可选）</span>
             </label>
             <div className="relative">
               <input
@@ -246,7 +247,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
             {/* 配图预览 */}
             {coverImageUrl && imagePreviewStatus !== 'error' && (
               <div className="mt-4">
-                <div className="relative bg-base-200 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
+                <div className="relative bg-base-200 rounded-lg overflow-hidden aspect-video flex items-center justify-center w-full max-w-md">
                   {imagePreviewStatus === 'loading' && (
                     <div className="flex flex-col items-center gap-2">
                       <span className="loading loading-spinner"></span>
@@ -269,17 +270,17 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
             )}
           </div>
 
-          {/* 关联活动选择 */}
-          <div className="form-control">
+          {/* 相关活动选择 */}
+          <div className="form-control max-w-2xl mx-auto w-full">
             <label className="label">
-              <span className="label-text font-semibold text-base-content">关联活动（可选）</span>
+              <span className="label-text font-semibold text-base-content text-lg">添加相关活动（可选）</span>
             </label>
 
             {selectedActivityId && selectedActivity ? (
               <div className="card bg-base-200 border border-base-300">
                 <div className="card-body p-4 flex-row items-center gap-4">
                   {selectedActivity.cover_image_url && (
-                    <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-base-300">
+                    <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-base-300">
                       <img
                         src={selectedActivity.cover_image_url}
                         alt={selectedActivity.name}
@@ -288,10 +289,10 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm truncate">
+                    <h4 className="font-semibold truncate">
                       {selectedActivity.name}
                     </h4>
-                    <p className="text-xs text-base-content/60 mt-1">
+                    <p className="text-sm text-base-content/60 mt-1">
                       {selectedActivity.city} {selectedActivity.address}
                     </p>
                   </div>
@@ -315,7 +316,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
                   <div className="relative">
                     <input
                       type="text"
-                      className="input input-bordered w-full input-sm focus:input-primary"
+                      className="input input-bordered w-full focus:input-primary"
                       placeholder="搜索活动名称..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -360,7 +361,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
                     <p className="text-sm text-base-content/50 mb-3 font-medium">
                       或选择您已参加的活动：
                     </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                       {enrolledActivities.map((activity) => (
                         <button
                           key={activity.id}
@@ -402,7 +403,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           </div>
 
           {/* 提交按钮 */}
-          <div className="modal-action gap-2 pt-4">
+          <div className="modal-action gap-2 pt-4 max-w-2xl mx-auto w-full">
             <button
               type="button"
               className="btn btn-ghost flex-1"

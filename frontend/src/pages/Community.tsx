@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
 import PostFormModal from '../components/PostFormModal';
 import PostDetailModal from '../components/PostDetailModal';
+import ManagePostsModal from '../components/PostManageModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import postAPI, { Post, CreatePostPayload } from '../api/post';
 import activityAPI, { Activity } from '../api/activity';
 import userAPI from '../api/user';
 import { useToast } from '../components/Toast';
+import { formatDate } from '../utils/date';
 
 const Community: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const Community: React.FC = () => {
   );
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [expandCommentOnOpen, setExpandCommentOnOpen] = useState(false);
+  const [showManagePosts, setShowManagePosts] = useState(false);
   const currentUser = userAPI.getCurrentUserFromStorage();
 
   // 加载帖子列表
@@ -140,6 +143,8 @@ const Community: React.FC = () => {
     setExpandCommentOnOpen(false);
   };
 
+  const myPosts = currentUser ? posts.filter((p) => p.author_id === currentUser.id) : [];
+
   return (
     <div className="min-h-screen bg-pattern-overlay pt-20">
       <div className="container mx-auto px-4 py-8">
@@ -153,7 +158,13 @@ const Community: React.FC = () => {
 
         {/* 发帖入口 */}
         {currentUser && (
-          <div className="flex justify-end mb-8">
+          <div className="flex justify-end gap-3 mb-8">
+            <button
+              className="btn btn-outline"
+              onClick={() => setShowManagePosts(true)}
+            >
+              管理我的帖子
+            </button>
             <button
               className="btn btn-primary"
               onClick={() => setShowPostForm(true)}
@@ -276,6 +287,23 @@ const Community: React.FC = () => {
         </div>
       </div>
 
+      {showManagePosts && (
+        <ManagePostsModal
+          isOpen={showManagePosts}
+          posts={myPosts}
+          onClose={() => setShowManagePosts(false)}
+          onEdit={(post) => {
+            setEditingPost(post);
+            setShowPostForm(true);
+          }}
+          onDelete={handleDeletePost}
+          onViewDetail={(post) => {
+            setSelectedPost(post);
+            setExpandCommentOnOpen(false);
+          }}
+        />
+      )}
+
       {/* 发帖表单Modal */}
       <PostFormModal
         isOpen={showPostForm}
@@ -302,6 +330,7 @@ const Community: React.FC = () => {
           post={selectedPost}
           onClose={handleClosePostDetail}
           onLikeChange={handleLikeChange}
+          onViewActivity={handleViewActivity}
           expandCommentOnOpen={expandCommentOnOpen}
         />
       )}

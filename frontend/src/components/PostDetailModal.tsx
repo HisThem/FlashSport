@@ -10,6 +10,7 @@ interface PostDetailModalProps {
   onClose: () => void;
   onLikeChange?: (postId: number, isLiked: boolean) => void;
   expandCommentOnOpen?: boolean;
+  onViewActivity?: (activityId: number) => void;
 }
 
 const PostDetailModal: React.FC<PostDetailModalProps> = ({
@@ -18,6 +19,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   onClose,
   onLikeChange,
   expandCommentOnOpen,
+  onViewActivity,
 }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -108,7 +110,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   if (!isOpen || !post) return null;
 
   return (
-    <div className="modal modal-open pt-20">
+    <div className="modal modal-open pt-20 z-30">
       <div className="modal-box modal-bounce relative w-11/12 max-w-6xl h-[90vh] max-h-[90vh] p-0 overflow-hidden bg-base-100">
         <button
           className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
@@ -143,17 +145,46 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
               />
               <div className="flex-col">
                 <span className="font-semibold text-base">{post.author?.username || '用户'}</span>
-                <span className="text-sm text-base-content/60">ID: {post.author?.id ?? '未知'}</span>
+                <span className="text-sm text-base-content/60">发布于 {formatDate(new Date(post.created_at))}</span>
               </div>
             </div>
 
             {/* Content */}
             <div className="space-y-2">
-              <div className="text-sm text-base-content/60">发布于 {formatDate(new Date(post.created_at))}</div>
               <div className="text-base-content whitespace-pre-wrap break-words leading-relaxed text-lg">
                 {post.content}
               </div>
             </div>
+
+            {/* Associated Activity */}
+            {post.activity && (
+              <div
+                className="p-3 bg-base-200 rounded-lg cursor-pointer hover:bg-base-300 transition-colors"
+                onClick={() => onViewActivity?.(post.activity!.id)}
+              >
+                <div className="flex items-start gap-2">
+                  {post.activity.cover_image_url && (
+                    <img
+                      src={post.activity.cover_image_url}
+                      alt={post.activity.name}
+                      className="w-12 h-12 rounded object-cover flex-shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-base-content/60">相关活动</p>
+                    <p className="font-semibold text-sm truncate">{post.activity.name}</p>
+                  </div>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    className="w-4 h-4 stroke-current flex-shrink-0 mt-1"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
 
             <div className="flex-1 min-h-0 flex flex-col gap-4">
               {/* Comments */}

@@ -56,44 +56,13 @@ const PostCard: React.FC<PostCardProps> = ({
       )}
 
       <div className="card-body pt-4 cursor-pointer" onClick={() => onOpenDetail?.(post, false)}>
-        {isOwner && (
-          <div className="flex justify-end">
-            <div className="dropdown dropdown-end">
-              <button className="btn btn-ghost btn-xs">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                  />
-                </svg>
-              </button>
-              <ul className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                <li>
-                  <a onClick={() => onEdit?.(post)}>编辑</a>
-                </li>
-                <li>
-                  <a onClick={() => onDelete?.(post.id)} className="text-error">
-                    删除
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
 
         {/* 内容 */}
         <p className="text-sm text-base-content whitespace-pre-wrap break-words line-clamp-5">
           {post.content}
         </p>
 
-        {/* 关联活动 */}
+        {/* 相关活动 */}
         {activity && (
           <div
             className="mt-3 p-3 bg-base-200 rounded-lg cursor-pointer hover:bg-base-300 transition-colors"
@@ -111,7 +80,7 @@ const PostCard: React.FC<PostCardProps> = ({
                 />
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-base-content/60">关联活动</p>
+                <p className="text-xs text-base-content/60">相关活动</p>
                 <p className="font-semibold text-sm truncate">
                   {activity.name}
                 </p>
