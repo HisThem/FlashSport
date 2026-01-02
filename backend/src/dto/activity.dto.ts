@@ -190,15 +190,3 @@ export class ActivityQueryDto {
   @IsString()
   city?: string;
 }
-
-export class CreateCommentDto {
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  @Type(() => Number)
-  rating: number;
-
-  @IsString()
-  @IsNotEmpty()
-  content: string;
-}

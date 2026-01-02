@@ -14,13 +14,11 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ActivityService } from '../service/activity.service';
-import { CommentService } from '../service/comment.service';
 import {
   CreateActivityDto,
   UpdateActivityDto,
   ActivityQueryDto,
 } from '../dto/activity.dto';
-import { CreateCommentDto } from '../dto/comment.dto';
 import { ApiResponse } from '../dto/response.dto';
 import { ActivityStatus } from '../entities/activity.entity';
 
@@ -36,7 +34,6 @@ interface AuthenticatedRequest extends Request {
 export class ActivityController {
   constructor(
     private readonly activityService: ActivityService,
-    private readonly commentService: CommentService,
   ) {}
 
   @Post()
@@ -186,65 +183,22 @@ export class ActivityController {
   }
 
   @Get(':id/comments')
-  async getActivityComments(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('page') pageStr: string = '1',
-    @Query('limit') limitStr: string = '10',
-  ): Promise<ApiResponse> {
-    try {
-      const page = parseInt(pageStr) || 1;
-      const limit = parseInt(limitStr) || 10;
-
-      const queryDto = {
-        activity_id: id,
-        page,
-        limit,
-      };
-      const result = await this.commentService.getCommentsByActivity(queryDto);
-      return {
-        success: true,
-        message: '获取评论列表成功',
-        data: result.comments,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '获取评论列表失败';
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
+  @Get(':id/comments')
+  async getActivityComments(): Promise<ApiResponse> {
+    return {
+      success: true,
+      message: '活动评论功能已停用',
+      data: [],
+    };
   }
 
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard)
-  async createActivityComment(
-    @Param('id', ParseIntPipe) activityId: number,
-    @Request() req: AuthenticatedRequest,
-    @Body() createCommentDto: Omit<CreateCommentDto, 'activity_id'>,
-  ): Promise<ApiResponse> {
-    try {
-      const commentData: CreateCommentDto = {
-        ...createCommentDto,
-        activity_id: activityId,
-      };
-      const comment = await this.commentService.createComment(
-        req.user.id,
-        commentData,
-      );
-      return {
-        success: true,
-        message: '评论创建成功',
-        data: comment,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '创建评论失败';
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    }
+  async createActivityComment(): Promise<ApiResponse> {
+    return {
+      success: false,
+      message: '活动评论功能已停用',
+    };
   }
 
   @Delete(':id/enroll')

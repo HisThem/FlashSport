@@ -85,21 +85,6 @@ export interface Enrollment {
   };
 }
 
-// 评论接口
-export interface Comment {
-  id: number;
-  activity_id: number;
-  user_id: number;
-  rating: number;
-  content: string;
-  create_time: string;
-  user?: {
-    id: number;
-    username: string;
-    avatar_url?: string;
-  };
-}
-
 // 创建活动请求参数
 export interface CreateActivityRequest {
   name: string;
@@ -147,12 +132,6 @@ export interface GetActivitiesRequest {
   sort?: 'newest' | 'oldest' | 'start_time' | 'participants';
   province?: string;
   city?: string;
-}
-
-// 创建评论请求参数
-export interface CreateCommentRequest {
-  rating: number;
-  content: string;
 }
 
 // API响应基础结构
@@ -316,37 +295,6 @@ class ActivityAPI {
     }
     
     throw new Error(response.message || '获取报名列表失败');
-  }
-
-  /**
-   * 获取活动评论
-   * @param activityId 活动ID
-   * @returns Promise<Comment[]>
-   */
-  async getActivityComments(activityId: number): Promise<Comment[]> {
-    const response: ApiResponse<Comment[]> = await request.get(`${ACTIVITY_MODULE}/${activityId}/comments`);
-    
-    if (response.success && response.data) {
-      return response.data;
-    }
-    
-    throw new Error(response.message || '获取评论失败');
-  }
-
-  /**
-   * 创建评论
-   * @param activityId 活动ID
-   * @param commentData 评论数据
-   * @returns Promise<Comment>
-   */
-  async createComment(activityId: number, commentData: CreateCommentRequest): Promise<Comment> {
-    const response: ApiResponse<Comment> = await request.post(`${ACTIVITY_MODULE}/${activityId}/comments`, commentData);
-    
-    if (response.success && response.data) {
-      return response.data;
-    }
-    
-    throw new Error(response.message || '发表评论失败');
   }
 
   /**

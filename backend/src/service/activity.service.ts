@@ -10,13 +10,11 @@ import { Repository } from 'typeorm';
 import { Activity, ActivityStatus } from '../entities/activity.entity';
 import { Category } from '../entities/category.entity';
 import { Enrollment, EnrollmentStatus } from '../entities/enrollment.entity';
-import { Comment } from '../entities/comment.entity';
 import { ActivityImage } from '../entities/activity-image.entity';
 import {
   CreateActivityDto,
   UpdateActivityDto,
   ActivityQueryDto,
-  CreateCommentDto,
 } from '../dto/activity.dto';
 
 @Injectable()
@@ -28,8 +26,6 @@ export class ActivityService {
     private categoryRepository: Repository<Category>,
     @InjectRepository(Enrollment)
     private enrollmentRepository: Repository<Enrollment>,
-    @InjectRepository(Comment)
-    private commentRepository: Repository<Comment>,
     @InjectRepository(ActivityImage)
     private activityImageRepository: Repository<ActivityImage>,
   ) {}
@@ -215,10 +211,7 @@ export class ActivityService {
       .leftJoinAndSelect('activity.images', 'images')
       .leftJoinAndSelect('activity.enrollments', 'enrollments')
       .leftJoinAndSelect('enrollments.user', 'enrollmentUser')
-      .leftJoinAndSelect('activity.comments', 'comments')
-      .leftJoinAndSelect('comments.user', 'commentUser')
       .where('activity.id = :id', { id })
-      .orderBy('comments.create_time', 'DESC')
       .getOne();
 
     if (!activity) {
@@ -558,23 +551,6 @@ export class ActivityService {
     await this.activityRepository.save(activity);
   }
 
-  async addComment(
-    activityId: number,
-    userId: number,
-    createCommentDto: CreateCommentDto,
-  ): Promise<Comment> {
-    // 检查活动是否存在
-    await this.getActivityById(activityId);
-
-    const comment = this.commentRepository.create({
-      activity_id: activityId,
-      user_id: userId,
-      ...createCommentDto,
-    });
-
-    return await this.commentRepository.save(comment);
-  }
-
   async getCategories(): Promise<Category[]> {
     return await this.categoryRepository.find();
   }
@@ -713,14 +689,6 @@ export class ActivityService {
     });
   }
 
-  async getActivityComments(activityId: number): Promise<Comment[]> {
-    return this.commentRepository.find({
-      where: { activity_id: activityId },
-      relations: ['user'],
-      order: { create_time: 'DESC' },
-    });
-  }
-
   // 管理员方法
   async getAllActivitiesForAdmin(queryDto: ActivityQueryDto): Promise<{
     items: Activity[];
@@ -851,9 +819,6 @@ export class ActivityService {
 
     // 删除相关的报名记录
     await this.enrollmentRepository.delete({ activity_id: activityId });
-
-    // 删除相关的评论
-    await this.commentRepository.delete({ activity_id: activityId });
 
     // 删除相关的图片记录
     await this.activityImageRepository.delete({ activity_id: activityId });

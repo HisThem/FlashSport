@@ -3,11 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ActivityController } from '../controller/activity.controller';
 import { ActivityService } from '../service/activity.service';
-import { CommentService } from '../service/comment.service';
 import { Activity } from '../entities/activity.entity';
 import { Category } from '../entities/category.entity';
 import { Enrollment } from '../entities/enrollment.entity';
-import { Comment } from '../entities/comment.entity';
 import { ActivityImage } from '../entities/activity-image.entity';
 import { UserModule } from './user.module';
 
@@ -17,7 +15,6 @@ import { UserModule } from './user.module';
       Activity,
       Category,
       Enrollment,
-      Comment,
       ActivityImage,
     ]),
     JwtModule.register({
@@ -27,7 +24,7 @@ import { UserModule } from './user.module';
     UserModule, // 导入UserModule以使用UserService
   ],
   controllers: [ActivityController],
-  providers: [ActivityService, CommentService],
+  providers: [ActivityService],
   exports: [ActivityService],
 })
 export class ActivityModule {}

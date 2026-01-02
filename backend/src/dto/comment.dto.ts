@@ -12,12 +12,7 @@ import { Transform } from 'class-transformer';
 export class CreateCommentDto {
   @IsNumber()
   @Min(1)
-  activity_id: number;
-
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  rating: number;
+  post_id: number;
 
   @IsString()
   @IsNotEmpty()
@@ -26,12 +21,6 @@ export class CreateCommentDto {
 }
 
 export class UpdateCommentDto {
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  rating?: number;
-
   @IsOptional()
   @IsString()
   @IsNotEmpty()
@@ -43,7 +32,7 @@ export class CommentQueryDto {
   @Transform(({ value }) => parseInt(value as string))
   @IsNumber()
   @Min(1)
-  activity_id: number;
+  post_id: number;
 
   @IsOptional()
   @Transform(({ value }) => parseInt(value as string))

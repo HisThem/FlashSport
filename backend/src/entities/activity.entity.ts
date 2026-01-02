@@ -11,7 +11,6 @@ import {
 import { User } from './user.entity';
 import { Category } from './category.entity';
 import { Enrollment } from './enrollment.entity';
-import { Comment } from './comment.entity';
 import { ActivityImage } from './activity-image.entity';
 
 export enum ActivityStatus {
@@ -105,9 +104,6 @@ export class Activity {
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.activity)
   enrollments: Enrollment[];
-
-  @OneToMany(() => Comment, (comment) => comment.activity)
-  comments: Comment[];
 
   @OneToMany(() => ActivityImage, (image) => image.activity)
   images: ActivityImage[];

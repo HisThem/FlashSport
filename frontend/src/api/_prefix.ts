@@ -12,3 +12,6 @@ export const ACTIVITY_MODULE = `${API_MODULE}/activity`;
 
 // 帖子模块
 export const POST_MODULE = `${API_MODULE}/post`;
+
+// 评论模块
+export const COMMENT_MODULE = `${API_MODULE}/comments`;

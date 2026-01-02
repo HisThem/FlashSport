@@ -6,9 +6,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Activity } from './activity.entity';
+import { Comment } from './comment.entity';
 
 @Entity('posts')
 export class Post {
@@ -47,4 +49,7 @@ export class Post {
   @ManyToOne(() => Activity, { eager: true, nullable: true })
   @JoinColumn({ name: 'activity_id' })
   activity?: Activity;
+
+  @OneToMany(() => Comment, (comment) => comment.post)
+  comments: Comment[];
 }

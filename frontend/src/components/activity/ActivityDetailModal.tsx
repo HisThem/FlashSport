@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Comment, Enrollment, ActivityStatus, FeeType } from '../../api/activity';
+import { Activity, Enrollment, ActivityStatus, FeeType } from '../../api/activity';
 import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
-import { formatDate, getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
+import { getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
 import { enrichActivityWithEnrollmentStatus, isRegistrationExpired, formatActivityLocation } from '../../utils/activity';
 import Avatar from '../Avatar';
 
@@ -23,11 +23,8 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   onCancelEnrollment,
   onEdit
 }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
-  const [commentLoading, setCommentLoading] = useState(false);
-  const [newComment, setNewComment] = useState({ rating: 5, content: '' });
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
 
@@ -42,31 +39,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     
     setLoading(true);
     try {
-      const [commentsData, enrollmentsData] = await Promise.all([
-        activityAPI.getActivityComments(activity.id),
-        activityAPI.getActivityEnrollments(activity.id)
-      ]);
-      setComments(commentsData);
+      const enrollmentsData = await activityAPI.getActivityEnrollments(activity.id);
       setEnrollments(enrollmentsData);
     } catch (error) {
       console.error('加载活动详情失败:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSubmitComment = async () => {
-    if (!activity || !newComment.content.trim()) return;
-
-    setCommentLoading(true);
-    try {
-      const comment = await activityAPI.createComment(activity.id, newComment);
-      setComments([comment, ...comments]);
-      setNewComment({ rating: 5, content: '' });
-    } catch (error) {
-      console.error('发表评论失败:', error);
-    } finally {
-      setCommentLoading(false);
     }
   };
 
@@ -120,17 +98,6 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
       case FeeType.PREPAID_REFUNDABLE: return `预付 ￥${feeAmount} (多退少补)`;
       default: return '费用待定';
     }
-  };
-
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, index) => (
-      <span 
-        key={index} 
-        className={`text-lg ${index < rating ? 'text-yellow-400' : 'text-gray-300'}`}
-      >
-        ★
-      </span>
-    ));
   };
 
   return (
@@ -345,78 +312,6 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                 <span className="text-sm truncate">{enrollment.user?.username}</span>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* 评论区 */}
-        <div>
-          <h4 className="font-semibold text-lg mb-3">评论 ({comments.length}条)</h4>
-          
-          {/* 发表评论 */}
-          {currentUser && enrichedActivity.status === ActivityStatus.FINISHED && (enrichedActivity.is_enrolled || false) && (
-            <div className="mb-4 p-4 bg-base-200 rounded-lg">
-              <h5 className="font-medium mb-2">发表评论</h5>
-              <div className="flex items-center gap-2 mb-2">
-                <span>评分:</span>
-                <div className="rating rating-sm">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <input
-                      key={star}
-                      type="radio"
-                      name="rating"
-                      className="mask mask-star-2 bg-orange-400"
-                      checked={newComment.rating === star}
-                      onChange={() => setNewComment({ ...newComment, rating: star })}
-                    />
-                  ))}
-                </div>
-              </div>
-              <textarea
-                className="textarea textarea-bordered w-full mb-2"
-                placeholder="分享您的活动体验..."
-                value={newComment.content}
-                onChange={(e) => setNewComment({ ...newComment, content: e.target.value })}
-                rows={3}
-              />
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleSubmitComment}
-                disabled={commentLoading || !newComment.content.trim()}
-              >
-                {commentLoading ? '发布中...' : '发布评论'}
-              </button>
-            </div>
-          )}
-
-          {/* 评论列表 */}
-          <div className="space-y-3">
-            {comments.map((comment) => (
-              <div key={comment.id} className="p-3 bg-base-100 border rounded-lg">
-                <div className="flex items-start gap-3">
-                  <Avatar 
-                    username={comment.user?.username || '?'}
-                    avatarUrl={comment.user?.avatar_url}
-                    size="tiny"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium">{comment.user?.username}</span>
-                      <div className="flex">{renderStars(comment.rating)}</div>
-                      <span className="text-sm text-base-content/60">
-                        {formatDate(comment.create_time)}
-                      </span>
-                    </div>
-                    <p className="text-base-content/80">{comment.content}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {comments.length === 0 && (
-              <div className="text-center py-8 text-base-content/60">
-                暂无评论
-              </div>
-            )}
           </div>
         </div>
 

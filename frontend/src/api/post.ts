@@ -1,5 +1,5 @@
 import request from '../utils/request';
-import { POST_MODULE } from './_prefix';
+import { POST_MODULE, COMMENT_MODULE } from './_prefix';
 
 export interface Post {
   id: number;
@@ -20,6 +20,19 @@ export interface Post {
     id: number;
     name: string;
     cover_image_url?: string;
+  };
+}
+
+export interface Comment {
+  id: number;
+  post_id: number;
+  user_id: number;
+  content: string;
+  create_time: string;
+  user?: {
+    id: number;
+    username: string;
+    avatar_url?: string;
   };
 }
 
@@ -91,6 +104,23 @@ const postAPI = {
   unlikePost: async (id: number): Promise<Post> => {
     const res = await request.delete(`${POST_MODULE}/${id}/like`);
     return res.data;
+  },
+
+  // 获取帖子评论
+  getComments: async (postId: number): Promise<Comment[]> => {
+    const res = await request.get(`${COMMENT_MODULE}/post/${postId}`);
+    return res.data;
+  },
+
+  // 创建帖子评论
+  createComment: async (postId: number, content: string): Promise<Comment> => {
+    const res = await request.post(`${COMMENT_MODULE}/post/${postId}`, { content });
+    return res.data;
+  },
+
+  // 删除帖子评论
+  deleteComment: async (commentId: number): Promise<void> => {
+    await request.delete(`${COMMENT_MODULE}/${commentId}`);
   },
 };
 

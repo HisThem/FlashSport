@@ -30,18 +30,45 @@ interface AuthenticatedRequest extends Request {
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  // 创建评论
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  async createComment(
-    @Request() req: AuthenticatedRequest,
-    @Body() createCommentDto: CreateCommentDto,
+  @Get('post/:postId')
+  async getCommentsByPost(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Query('page') pageStr: string = '1',
+    @Query('limit') limitStr: string = '10',
   ): Promise<ApiResponse> {
     try {
-      const userId = req.user.id;
+      const page = parseInt(pageStr) || 1;
+      const limit = parseInt(limitStr) || 10;
+
+      const queryDto: CommentQueryDto = {
+        post_id: postId,
+        page,
+        limit,
+      };
+      const result = await this.commentService.getCommentsByPost(queryDto);
+      return ApiResponse.success(result.comments, '获取评论列表成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取评论列表失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  @Post('post/:postId')
+  @UseGuards(JwtAuthGuard)
+  async createPostComment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Request() req: AuthenticatedRequest,
+    @Body() createCommentDto: Omit<CreateCommentDto, 'post_id'>,
+  ): Promise<ApiResponse> {
+    try {
+      const commentData: CreateCommentDto = {
+        ...createCommentDto,
+        post_id: postId,
+      };
       const comment = await this.commentService.createComment(
-        userId,
-        createCommentDto,
+        req.user.id,
+        commentData,
       );
       return ApiResponse.success(comment, '评论创建成功');
     } catch (error) {
@@ -51,47 +78,6 @@ export class CommentController {
     }
   }
 
-  // 获取活动的评论列表
-  @Get('activity/:activityId')
-  async getCommentsByActivity(
-    @Param('activityId', ParseIntPipe) activityId: number,
-    @Query('page') pageStr: string = '1',
-    @Query('limit') limitStr: string = '10',
-  ): Promise<ApiResponse> {
-    try {
-      const page = parseInt(pageStr) || 1;
-      const limit = parseInt(limitStr) || 10;
-
-      const queryDto: CommentQueryDto = {
-        activity_id: activityId,
-        page,
-        limit,
-      };
-      const result = await this.commentService.getCommentsByActivity(queryDto);
-      return ApiResponse.success(result, '获取评论列表成功');
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '获取评论列表失败';
-      return ApiResponse.error(errorMessage);
-    }
-  }
-
-  // 获取单个评论详情
-  @Get(':id')
-  async getCommentById(
-    @Param('id', ParseIntPipe) commentId: number,
-  ): Promise<ApiResponse> {
-    try {
-      const comment = await this.commentService.getCommentById(commentId);
-      return ApiResponse.success(comment, '获取评论详情成功');
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '获取评论详情失败';
-      return ApiResponse.error(errorMessage);
-    }
-  }
-
-  // 更新评论
   @Put(':id')
   @UseGuards(JwtAuthGuard)
   async updateComment(
@@ -114,25 +100,6 @@ export class CommentController {
     }
   }
 
-  // 删除评论
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  async deleteComment(
-    @Request() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) commentId: number,
-  ): Promise<ApiResponse> {
-    try {
-      const userId = req.user.id;
-      await this.commentService.deleteComment(userId, commentId);
-      return ApiResponse.success(null, '评论删除成功');
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : '删除评论失败';
-      return ApiResponse.error(errorMessage);
-    }
-  }
-
-  // 获取当前用户的评论
   @Get('user/my')
   @UseGuards(JwtAuthGuard)
   async getMyComments(
@@ -158,7 +125,20 @@ export class CommentController {
     }
   }
 
-  // 管理员删除评论
+  @Get(':id')
+  async getCommentById(
+    @Param('id', ParseIntPipe) commentId: number,
+  ): Promise<ApiResponse> {
+    try {
+      const comment = await this.commentService.getCommentById(commentId);
+      return ApiResponse.success(comment, '获取评论详情成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取评论详情失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
   @Delete('admin/:id')
   @UseGuards(JwtAuthGuard)
   async deleteCommentAsAdmin(
@@ -166,12 +146,28 @@ export class CommentController {
     @Param('id', ParseIntPipe) commentId: number,
   ): Promise<ApiResponse> {
     try {
-      // 检查是否是管理员
       if (req.user.role !== 'admin') {
         return ApiResponse.error('权限不足');
       }
 
       await this.commentService.deleteCommentAsAdmin(commentId);
+      return ApiResponse.success(null, '评论删除成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '删除评论失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteComment(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) commentId: number,
+  ): Promise<ApiResponse> {
+    try {
+      const userId = req.user.id;
+      await this.commentService.deleteComment(userId, commentId);
       return ApiResponse.success(null, '评论删除成功');
     } catch (error) {
       const errorMessage =

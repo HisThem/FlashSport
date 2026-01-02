@@ -6,8 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
-import { Activity } from '../entities/activity.entity';
-import { Enrollment } from '../entities/enrollment.entity';
+import { Post } from '../entities/post.entity';
 import {
   CreateCommentDto,
   UpdateCommentDto,
@@ -19,10 +18,8 @@ export class CommentService {
   constructor(
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>,
-    @InjectRepository(Activity)
-    private activityRepository: Repository<Activity>,
-    @InjectRepository(Enrollment)
-    private enrollmentRepository: Repository<Enrollment>,
+    @InjectRepository(Post)
+    private postRepository: Repository<Post>,
   ) {}
 
   // 创建评论
@@ -30,38 +27,22 @@ export class CommentService {
     userId: number,
     createCommentDto: CreateCommentDto,
   ): Promise<Comment> {
-    const { activity_id, rating, content } = createCommentDto;
+    const { post_id, content } = createCommentDto;
 
-    // 检查活动是否存在
-    const activity = await this.activityRepository.findOne({
-      where: { id: activity_id },
-    });
-    if (!activity) {
-      throw new NotFoundException('活动不存在');
+    const post = await this.postRepository.findOne({ where: { id: post_id } });
+    if (!post) {
+      throw new NotFoundException('帖子不存在');
     }
 
-    // 检查用户是否参加了该活动
-    const enrollment = await this.enrollmentRepository.findOne({
-      where: {
-        activity_id: activity_id,
-        user_id: userId,
-      },
-    });
-    if (!enrollment) {
-      throw new ForbiddenException('只有参加过活动的用户才能评论');
-    }
-
-    // 创建评论
     const comment = this.commentRepository.create({
-      activity_id,
+      post_id,
       user_id: userId,
-      rating,
       content,
     });
 
     const savedComment = await this.commentRepository.save(comment);
+    await this.postRepository.increment({ id: post_id }, 'comment_count', 1);
 
-    // 重新查询评论以获取完整的用户信息
     const commentWithUser = await this.commentRepository.findOne({
       where: { id: savedComment.id },
       relations: ['user'],
@@ -74,51 +55,33 @@ export class CommentService {
     return commentWithUser;
   }
 
-  // 获取活动的评论列表
-  async getCommentsByActivity(queryDto: CommentQueryDto): Promise<{
+  // 获取帖子的评论列表
+  async getCommentsByPost(queryDto: CommentQueryDto): Promise<{
     comments: Comment[];
     total: number;
     page: number;
     limit: number;
-    average_rating: number;
   }> {
-    const { activity_id, page = 1, limit = 10 } = queryDto;
+    const { post_id, page = 1, limit = 10 } = queryDto;
 
-    // 检查活动是否存在
-    const activity = await this.activityRepository.findOne({
-      where: { id: activity_id },
-    });
-    if (!activity) {
-      throw new NotFoundException('活动不存在');
+    const post = await this.postRepository.findOne({ where: { id: post_id } });
+    if (!post) {
+      throw new NotFoundException('帖子不存在');
     }
 
-    // 获取评论列表
     const [comments, total] = await this.commentRepository.findAndCount({
-      where: { activity_id },
+      where: { post_id },
       order: { create_time: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
       relations: ['user'],
     });
 
-    // 计算平均评分
-    const avgResult: { average?: string } =
-      (await this.commentRepository
-        .createQueryBuilder('comment')
-        .select('AVG(comment.rating)', 'average')
-        .where('comment.activity_id = :activity_id', { activity_id })
-        .getRawOne()) || {};
-
-    const average_rating = avgResult.average
-      ? parseFloat(avgResult.average)
-      : 0;
-
     return {
       comments,
       total,
       page,
       limit,
-      average_rating: Math.round(average_rating * 10) / 10, // 保留一位小数
     };
   }
 
@@ -163,6 +126,7 @@ export class CommentService {
       throw new ForbiddenException('只能删除自己的评论');
     }
 
+    await this.postRepository.decrement({ id: comment.post_id }, 'comment_count', 1);
     await this.commentRepository.remove(comment);
   }
 
@@ -176,6 +140,7 @@ export class CommentService {
       throw new NotFoundException('评论不存在');
     }
 
+    await this.postRepository.decrement({ id: comment.post_id }, 'comment_count', 1);
     await this.commentRepository.remove(comment);
   }
 
@@ -195,7 +160,7 @@ export class CommentService {
       order: { create_time: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
-      relations: ['activity', 'user'],
+      relations: ['post', 'user'],
     });
 
     return {
@@ -210,7 +175,7 @@ export class CommentService {
   async getCommentById(commentId: number): Promise<Comment> {
     const comment = await this.commentRepository.findOne({
       where: { id: commentId },
-      relations: ['user', 'activity'],
+      relations: ['user', 'post'],
     });
 
     if (!comment) {
