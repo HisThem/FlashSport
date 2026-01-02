@@ -7,9 +7,13 @@ import {
   UseGuards,
   Request,
   Query,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import { DatabaseService } from '../service/database.service';
+import { PostService } from '../service/post.service';
+import { ActivityService } from '../service/activity.service';
 import { User } from '../entities/user.entity';
 import {
   LoginDto,
@@ -34,6 +38,8 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly databaseService: DatabaseService,
+    private readonly postService: PostService,
+    private readonly activityService: ActivityService,
   ) {}
 
   // 认证相关路由
@@ -157,6 +163,83 @@ export class UserController {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : '密码修改失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  // Get user by ID - public endpoint for viewing user profiles
+  @Get('user/:id')
+  async getUserById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ApiResponse> {
+    try {
+      const user = await this.userService.findById(id);
+      return ApiResponse.success(user, '获取用户信息成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取用户信息失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  // Get posts by user ID
+  @Get('user/:id/posts')
+  async getUserPosts(
+    @Param('id', ParseIntPipe) userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<ApiResponse> {
+    try {
+      const result = await this.postService.getPosts({
+        page,
+        limit,
+        author_id: userId,
+      });
+      return ApiResponse.success(result, '获取用户帖子成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取用户帖子失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  // Get activities created by user
+  @Get('user/:id/created-activities')
+  async getUserCreatedActivities(
+    @Param('id', ParseIntPipe) userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<ApiResponse> {
+    try {
+      const result = await this.activityService.getActivities({
+        page,
+        limit,
+        organizer_id: userId,
+      });
+      return ApiResponse.success(result, '获取用户创建的活动成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取用户创建的活动失败';
+      return ApiResponse.error(errorMessage);
+    }
+  }
+
+  // Get activities that user has enrolled in
+  @Get('user/:id/enrolled-activities')
+  async getUserEnrolledActivities(
+    @Param('id', ParseIntPipe) userId: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<ApiResponse> {
+    try {
+      const result = await this.activityService.getEnrolledActivitiesByUser(
+        userId,
+        { page, limit },
+      );
+      return ApiResponse.success(result, '获取用户参与的活动成功');
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '获取用户参与的活动失败';
       return ApiResponse.error(errorMessage);
     }
   }

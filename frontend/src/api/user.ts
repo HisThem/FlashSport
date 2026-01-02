@@ -315,6 +315,78 @@ class UserAPI {
       return false;
     }
   }
+
+  /**
+   * 获取指定用户的公开信息
+   * @param userId 用户ID
+   * @returns Promise<User>
+   */
+  async getUserById(userId: number): Promise<User> {
+    const response: ApiResponse<User> = await request.get(`${USER_MODULE}/${userId}`);
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+
+    throw new Error(response.message || '获取用户信息失败');
+  }
+
+  /**
+   * 获取指定用户发布的帖子
+   * @param userId 用户ID
+   * @param page 页码
+   * @param limit 每页数量
+   * @returns Promise<any>
+   */
+  async getUserPosts(userId: number, page: number = 1, limit: number = 10): Promise<any> {
+    const response: ApiResponse = await request.get(
+      `${USER_MODULE}/${userId}/posts?page=${page}&limit=${limit}`
+    );
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+
+    throw new Error(response.message || '获取用户帖子失败');
+  }
+
+  /**
+   * 获取指定用户创建的活动
+   * @param userId 用户ID
+   * @param page 页码
+   * @param limit 每页数量
+   * @returns Promise<any>
+   */
+  async getUserCreatedActivities(userId: number, page: number = 1, limit: number = 10): Promise<any> {
+    const response: ApiResponse = await request.get(
+      `${USER_MODULE}/${userId}/created-activities?page=${page}&limit=${limit}`
+    );
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+
+    throw new Error(response.message || '获取用户创建的活动失败');
+  }
+
+  /**
+   * 获取指定用户参与的活动
+   * @param userId 用户ID
+   * @param page 页码
+   * @param limit 每页数量
+   * @returns Promise<any>
+   */
+  async getUserEnrolledActivities(userId: number, page: number = 1, limit: number = 10): Promise<any> {
+    const response: ApiResponse = await request.get(
+      `${USER_MODULE}/${userId}/enrolled-activities?page=${page}&limit=${limit}`
+    );
+
+    if (response.success && response.data) {
+      return response.data;
+    }
+
+    throw new Error(response.message || '获取用户参与的活动失败');
+  }
 }
 
 // 创建并导出用户API实例

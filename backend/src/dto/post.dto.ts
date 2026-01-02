@@ -54,4 +54,9 @@ export class PostQueryDto {
   @IsNumber()
   @Type(() => Number)
   activity_id?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  author_id?: number;
 }

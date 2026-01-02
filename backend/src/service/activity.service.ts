@@ -99,6 +99,7 @@ export class ActivityService {
       page = 1,
       limit = 10,
       category_id,
+      organizer_id,
       keyword,
       status,
       fee_type,
@@ -126,6 +127,12 @@ export class ActivityService {
     if (category_id) {
       queryBuilder.andWhere('activity.category_id = :category_id', {
         category_id,
+      });
+    }
+
+    if (organizer_id) {
+      queryBuilder.andWhere('activity.organizer_id = :organizer_id', {
+        organizer_id,
       });
     }
 
@@ -925,5 +932,44 @@ export class ActivityService {
       { activity_id: activityId, status: EnrollmentStatus.ENROLLED },
       { status: EnrollmentStatus.CANCELLED },
     );
+  }
+
+  // Get activities enrolled by a specific user (for user profile page)
+  async getEnrolledActivitiesByUser(
+    userId: number,
+    queryDto: { page?: number; limit?: number },
+  ): Promise<{
+    items: Activity[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const { page = 1, limit = 10 } = queryDto;
+    const skip = (page - 1) * limit;
+
+    // Query activities that the user has enrolled in
+    const [items, total] = await this.activityRepository
+      .createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.organizer', 'organizer')
+      .leftJoinAndSelect('activity.category', 'category')
+      .leftJoinAndSelect('activity.images', 'images')
+      .leftJoin('activity.enrollments', 'enrollment')
+      .where('enrollment.user_id = :userId', { userId })
+      .andWhere('enrollment.status = :status', {
+        status: EnrollmentStatus.ENROLLED,
+      })
+      .orderBy('activity.created_at', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

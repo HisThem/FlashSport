@@ -126,7 +126,11 @@ export class CommentService {
       throw new ForbiddenException('只能删除自己的评论');
     }
 
-    await this.postRepository.decrement({ id: comment.post_id }, 'comment_count', 1);
+    await this.postRepository.decrement(
+      { id: comment.post_id },
+      'comment_count',
+      1,
+    );
     await this.commentRepository.remove(comment);
   }
 
@@ -140,7 +144,11 @@ export class CommentService {
       throw new NotFoundException('评论不存在');
     }
 
-    await this.postRepository.decrement({ id: comment.post_id }, 'comment_count', 1);
+    await this.postRepository.decrement(
+      { id: comment.post_id },
+      'comment_count',
+      1,
+    );
     await this.commentRepository.remove(comment);
   }
 

@@ -190,10 +190,11 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           
           {enrichedActivity.organizer && (
             <div className="flex items-center gap-2 pt-2">
-              <Avatar 
-                username={enrichedActivity.organizer.username} 
+              <Avatar
+                username={enrichedActivity.organizer.username}
                 avatarUrl={enrichedActivity.organizer.avatar_url}
                 size="tiny"
+                userId={enrichedActivity.organizer.id}
               />
               <span className="text-base-content/80">{enrichedActivity.organizer.username}</span>
             </div>

@@ -140,6 +140,7 @@ const PostCard: React.FC<PostCardProps> = ({
               username={authorName}
               avatarUrl={author?.avatar_url}
               size="tiny"
+              userId={author?.id}
             />
             <span className="font-medium text-base-content/80 text-sm truncate">
               {displayName}

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -8,6 +8,8 @@ import { UserService } from '../service/user.service';
 import { DatabaseService } from '../service/database.service';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { jwtConfig } from '../configuration';
+import { PostModule } from './post.module';
+import { ActivityModule } from './activity.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { jwtConfig } from '../configuration';
       secret: jwtConfig.secret,
       signOptions: { expiresIn: jwtConfig.expiresIn },
     }),
+    PostModule,
+    forwardRef(() => ActivityModule),
   ],
   controllers: [UserController],
   providers: [UserService, DatabaseService, JwtStrategy],

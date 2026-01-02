@@ -175,10 +175,11 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
               <div>
                 <h4 className="font-semibold text-lg mb-2">发起人</h4>
                 <div className="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
-                  <Avatar 
+                  <Avatar
                     username={enrichedActivity.organizer.username}
                     avatarUrl={enrichedActivity.organizer.avatar_url}
                     size="small"
+                    userId={enrichedActivity.organizer.id}
                   />
                   <div>
                     <div className="font-medium">{enrichedActivity.organizer.username}</div>
@@ -304,10 +305,11 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {enrollments.map((enrollment) => (
               <div key={enrollment.id} className="flex flex-col items-center gap-2 p-2 bg-base-200 rounded-lg">
-                <Avatar 
+                <Avatar
                   username={enrollment.user?.username || '?'}
                   avatarUrl={enrollment.user?.avatar_url}
                   size="tiny"
+                  userId={enrollment.user?.id}
                 />
                 <span className="text-sm truncate">{enrollment.user?.username}</span>
               </div>

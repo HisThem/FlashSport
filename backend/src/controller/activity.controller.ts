@@ -32,9 +32,7 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('api/activity')
 export class ActivityController {
-  constructor(
-    private readonly activityService: ActivityService,
-  ) {}
+  constructor(private readonly activityService: ActivityService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
