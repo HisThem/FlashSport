@@ -12,7 +12,15 @@ export const databaseConfig: TypeOrmModuleOptions = {
   type: 'better-sqlite3',
   database:
     process.env.DB_PATH || path.join(process.cwd(), 'data', 'flashsport.db'),
-  entities: [User, Activity, Category, Enrollment, Comment, ActivityImage, Post],
+  entities: [
+    User,
+    Activity,
+    Category,
+    Enrollment,
+    Comment,
+    ActivityImage,
+    Post,
+  ],
   synchronize: process.env.NODE_ENV !== 'production', // 生产环境中应该设置为false
   logging: process.env.NODE_ENV === 'development',
   // SQLite 特定配置

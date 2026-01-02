@@ -19,7 +19,7 @@ const SportsBackground: React.FC<SportsBackgroundProps> = ({
         backgroundImage: `url(${sportsPattern})`,
         backgroundRepeat: 'repeat',
         backgroundSize: '200px 200px',
-        opacity: opacity,
+        opacity,
       }}
     />
   );

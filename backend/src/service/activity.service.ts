@@ -188,7 +188,9 @@ export class ActivityService {
     queryBuilder.skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
-    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
+    await Promise.all(
+      activities.map((activity) => this.ensureLocationDefaults(activity)),
+    );
     const totalPages = Math.ceil(total / limit);
 
     // 批量更新活动状态
@@ -628,7 +630,9 @@ export class ActivityService {
     queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
-    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
+    await Promise.all(
+      activities.map((activity) => this.ensureLocationDefaults(activity)),
+    );
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -684,7 +688,9 @@ export class ActivityService {
     queryBuilder.orderBy('activity.created_at', 'DESC').skip(skip).take(limit);
 
     const [activities, total] = await queryBuilder.getManyAndCount();
-    await Promise.all(activities.map((activity) => this.ensureLocationDefaults(activity)));
+    await Promise.all(
+      activities.map((activity) => this.ensureLocationDefaults(activity)),
+    );
     const totalPages = Math.ceil(total / limit);
 
     return {
@@ -792,7 +798,9 @@ export class ActivityService {
     ]);
 
     await Promise.all(
-      activities.entities.map((activity) => this.ensureLocationDefaults(activity)),
+      activities.entities.map((activity) =>
+        this.ensureLocationDefaults(activity),
+      ),
     );
 
     // 将 enrollment_count 添加到活动对象中

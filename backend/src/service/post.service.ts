@@ -26,7 +26,7 @@ export class PostService {
     authorId: number,
     createPostDto: CreatePostDto,
   ): Promise<Post> {
-    const { activity_id, ...postData } = createPostDto;
+    const { activity_id } = createPostDto;
 
     // 验证内容不为空
     if (!createPostDto.content || createPostDto.content.trim() === '') {
@@ -75,10 +75,7 @@ export class PostService {
     // 按创建时间倒序排列
     query = query.orderBy('post.created_at', 'DESC');
 
-    const [items, total] = await query
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    const [items, total] = await query.skip(skip).take(limit).getManyAndCount();
 
     const missingAuthorPosts = items.filter((post) => !post.author);
     if (missingAuthorPosts.length > 0) {
@@ -144,10 +141,7 @@ export class PostService {
     }
 
     // 验证内容
-    if (
-      updatePostDto.content &&
-      updatePostDto.content.trim() === ''
-    ) {
+    if (updatePostDto.content && updatePostDto.content.trim() === '') {
       throw new BadRequestException('帖子内容不能为空');
     }
 

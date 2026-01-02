@@ -99,9 +99,7 @@ export class PostController {
 
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
-  async likePost(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<ApiResponse> {
+  async likePost(@Param('id', ParseIntPipe) id: number): Promise<ApiResponse> {
     const post = await this.postService.incrementLikeCount(id);
     return {
       success: true,

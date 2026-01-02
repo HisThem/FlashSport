@@ -24,6 +24,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const author = post.author;
   const authorName = author?.username || '';
   const displayName = author?.username || '匿名用户';
+  const activity = post.activity;
 
   const handleLike = async () => {
     if (!currentUser) return;
@@ -85,23 +86,23 @@ const PostCard: React.FC<PostCardProps> = ({
         </p>
 
         {/* 关联活动 */}
-        {post.activity && (
+        {activity && (
           <div
             className="mt-3 p-3 bg-base-200 rounded-lg cursor-pointer hover:bg-base-300 transition-colors"
-            onClick={() => onViewActivity?.(post.activity!.id)}
+            onClick={() => onViewActivity?.(activity.id)}
           >
             <div className="flex items-start gap-2">
-              {post.activity.cover_image_url && (
+              {activity.cover_image_url && (
                 <img
-                  src={post.activity.cover_image_url}
-                  alt={post.activity.name}
+                  src={activity.cover_image_url}
+                  alt={activity.name}
                   className="w-12 h-12 rounded object-cover flex-shrink-0"
                 />
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-base-content/60">关联活动</p>
                 <p className="font-semibold text-sm truncate">
-                  {post.activity.name}
+                  {activity.name}
                 </p>
               </div>
               <svg
