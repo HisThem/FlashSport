@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import postAPI, { Post, Comment } from '../api/post';
-import Avatar from './Avatar';
-import { formatDate } from '../utils/date';
-import userAPI from '../api/user';
+import postAPI, { Post, Comment } from '../../api/post';
+import Avatar from '../Avatar';
+import { formatDate } from '../../utils/date';
+import userAPI from '../../api/user';
+import { useNavigate } from 'react-router-dom';
 
 interface PostDetailModalProps {
   post: Post | null;
@@ -21,6 +22,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   expandCommentOnOpen,
   onViewActivity,
 }) => {
+  const navigate = useNavigate();
   const [comments, setComments] = useState<Comment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
@@ -143,8 +145,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 size="small"
                 userId={post.author?.id}
               />
-              <div className="flex-col">
-                <span className="font-semibold text-base">{post.author?.username || '用户'}</span>
+              <div className="flex flex-col leading-tight">
+                <span
+                  className="font-semibold text-base cursor-pointer hover:text-primary"
+                  onClick={() => post.author?.id && navigate(`/profile/${post.author.id}`)}
+                >
+                  {post.author?.username || '用户'}
+                </span>
                 <span className="text-sm text-base-content/60">发布于 {formatDate(new Date(post.created_at))}</span>
               </div>
             </div>
@@ -160,7 +167,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
             {post.activity && (
               <div
                 className="p-3 bg-base-200 rounded-lg cursor-pointer hover:bg-base-300 transition-colors"
-                onClick={() => onViewActivity?.(post.activity!.id)}
+                onClick={() => post.activity && onViewActivity?.(post.activity.id)}
               >
                 <div className="flex items-start gap-2">
                   {post.activity.cover_image_url && (
@@ -214,7 +221,10 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 text-sm">
-                              <span className="font-medium text-base-content/80">
+                              <span
+                                className="font-medium text-base-content/80 cursor-pointer hover:text-primary"
+                                onClick={() => comment.user?.id && navigate(`/profile/${comment.user.id}`)}
+                              >
                                 {comment.user?.username || '用户'}
                               </span>
                               <span className="text-base-content/60">

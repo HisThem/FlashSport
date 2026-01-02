@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Post, CreatePostPayload } from '../api/post';
-import activityAPI, { Activity } from '../api/activity';
+import { Post, CreatePostPayload } from '../../api/post';
+import activityAPI, { Activity } from '../../api/activity';
 
 interface PostFormModalProps {
   isOpen: boolean;

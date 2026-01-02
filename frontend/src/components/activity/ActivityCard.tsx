@@ -3,6 +3,7 @@ import { Activity, ActivityStatus, FeeType } from '../../api/activity';
 import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, formatActivityLocation } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -35,6 +36,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
 }) => {
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
+  const navigate = useNavigate();
 
   // 获取状态显示文本和样式
   const getStatusBadge = (activity: Activity) => {
@@ -196,7 +198,15 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 size="tiny"
                 userId={enrichedActivity.organizer.id}
               />
-              <span className="text-base-content/80">{enrichedActivity.organizer.username}</span>
+              <span
+                className="text-base-content/80 cursor-pointer hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/profile/${enrichedActivity.organizer.id}`);
+                }}
+              >
+                {enrichedActivity.organizer.username}
+              </span>
             </div>
           )}
         </div>

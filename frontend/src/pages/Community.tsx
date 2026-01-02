@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PostCard from '../components/PostCard';
-import PostFormModal from '../components/PostFormModal';
-import PostDetailModal from '../components/PostDetailModal';
-import ManagePostsModal from '../components/PostManageModal';
+import PostCard from '../components/post/PostCard';
+import PostFormModal from '../components/post/PostFormModal';
+import PostDetailModal from '../components/post/PostDetailModal';
+import ManagePostsModal from '../components/post/PostManageModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import postAPI, { Post, CreatePostPayload } from '../api/post';
 import activityAPI, { Activity } from '../api/activity';
 import userAPI from '../api/user';
 import { useToast } from '../components/Toast';
-import { formatDate } from '../utils/date';
 
 const Community: React.FC = () => {
   const navigate = useNavigate();

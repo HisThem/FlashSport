@@ -259,19 +259,21 @@ const MyActivities: React.FC = () => {
         </div>
 
         {/* 标签页 */}
-        <div className="tabs tabs-boxed justify-center mb-8">
-          <button 
-            className={`tab tab-lg ${activeTab === 'published' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('published')}
-          >
-            我发布的活动 ({myActivities.length})
-          </button>
-          <button 
-            className={`tab tab-lg ${activeTab === 'enrolled' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('enrolled')}
-          >
-            我参与的活动 ({enrolledActivities.length})
-          </button>
+        <div className="flex justify-center mb-8">
+          <div className="bg-base-100/40 backdrop-blur-sm border border-base-200/30 rounded-full px-2 py-2 flex flex-wrap items-center gap-2">
+            <button 
+              className={`btn btn-sm rounded-full ${activeTab === 'published' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setActiveTab('published')}
+            >
+              我发布的活动 ({myActivities.length})
+            </button>
+            <button 
+              className={`btn btn-sm rounded-full ${activeTab === 'enrolled' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setActiveTab('enrolled')}
+            >
+              我参与的活动 ({enrolledActivities.length})
+            </button>
+          </div>
         </div>
 
         {/* 发布活动按钮 */}

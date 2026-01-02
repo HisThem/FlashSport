@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Post } from '../api/post';
-import { formatDate } from '../utils/date';
-import Avatar from './Avatar';
-import userAPI from '../api/user';
+import { Post } from '../../api/post';
+import { formatDate } from '../../utils/date';
+import Avatar from '../Avatar';
+import { useNavigate } from 'react-router-dom';
+import userAPI from '../../api/user';
 
 interface PostCardProps {
   post: Post;
-  onDelete?: (postId: number) => void;
-  onEdit?: (post: Post) => void;
   onViewActivity?: (activityId: number) => void;
   onLikeChange?: (postId: number, isLiked: boolean) => void;
   onOpenDetail?: (post: Post, expandComment?: boolean) => void;
@@ -15,14 +14,13 @@ interface PostCardProps {
 
 const PostCard: React.FC<PostCardProps> = ({
   post,
-  onDelete,
-  onEdit,
   onViewActivity,
   onLikeChange,
   onOpenDetail,
 }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comment_count || 0);
+  const navigate = useNavigate();
   const currentUser = userAPI.getCurrentUserFromStorage();
   const author = post.author;
   const authorName = author?.username || '';
@@ -41,7 +39,6 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  const isOwner = currentUser && currentUser.id === post.author_id;
 
   return (
     <div className="card bg-base-100 rounded-2xl shadow-md border border-base-200 hover:shadow-lg transition-shadow break-inside-avoid">
@@ -111,10 +108,18 @@ const PostCard: React.FC<PostCardProps> = ({
               size="tiny"
               userId={author?.id}
             />
-            <span className="font-medium text-base-content/80 text-sm truncate">
-              {displayName}
-            </span>
-            <span className="whitespace-nowrap">· {formatDate(new Date(post.created_at))}</span>
+             <div className="flex flex-col leading-tight min-w-0">
+               <span
+                 className="font-medium text-base-content/80 text-sm truncate cursor-pointer hover:text-primary"
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   if (author?.id) navigate(`/profile/${author.id}`);
+                 }}
+               >
+                 {displayName}
+               </span>
+               <span className="whitespace-nowrap text-xs text-base-content/60">{formatDate(new Date(post.created_at))}</span>
+             </div>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
             <button

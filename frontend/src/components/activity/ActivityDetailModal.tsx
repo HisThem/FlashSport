@@ -5,6 +5,7 @@ import userAPI from '../../api/user';
 import { getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
 import { enrichActivityWithEnrollmentStatus, isRegistrationExpired, formatActivityLocation } from '../../utils/activity';
 import Avatar from '../Avatar';
+import { useNavigate } from 'react-router-dom';
 
 interface ActivityDetailModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   onCancelEnrollment,
   onEdit
 }) => {
+  const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -182,7 +184,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                     userId={enrichedActivity.organizer.id}
                   />
                   <div>
-                    <div className="font-medium">{enrichedActivity.organizer.username}</div>
+                    <div
+                      className="font-medium cursor-pointer hover:text-primary"
+                      onClick={() => navigate(`/profile/${enrichedActivity.organizer?.id}`)}
+                    >
+                      {enrichedActivity.organizer.username}
+                    </div>
                   </div>
                 </div>
               </div>

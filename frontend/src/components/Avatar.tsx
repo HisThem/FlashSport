@@ -61,11 +61,13 @@ const Avatar: React.FC<AvatarProps> = ({
 
   // Handle click event
   const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering parent element's click event
+    e.stopPropagation();
     if (onClick) {
       onClick();
-    } else if (userId) {
-      navigate(`/user/${userId}`);
+      return;
+    }
+    if (userId) {
+      navigate(`/profile/${userId}`);
     }
   };
 

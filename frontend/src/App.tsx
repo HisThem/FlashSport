@@ -7,7 +7,6 @@ import Community from './pages/Community';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-import UserProfile from './pages/UserProfile';
 import Activities from './pages/Activity';
 import MyActivities from './pages/MyActivities';
 import Admin from './pages/Admin';
@@ -52,7 +51,8 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/user/:id" element={<UserProfile />} />
+              <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/user/:id" element={<Profile />} />
               <Route path="/activities" element={<Activities />} />
               <Route path="/my-activities" element={<MyActivities />} />
               <Route path="/admin" element={<Admin />} />

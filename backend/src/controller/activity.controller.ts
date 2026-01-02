@@ -182,21 +182,21 @@ export class ActivityController {
 
   @Get(':id/comments')
   @Get(':id/comments')
-  async getActivityComments(): Promise<ApiResponse> {
-    return {
+  getActivityComments(): Promise<ApiResponse> {
+    return Promise.resolve({
       success: true,
       message: '活动评论功能已停用',
       data: [],
-    };
+    });
   }
 
   @Post(':id/comments')
   @UseGuards(JwtAuthGuard)
-  async createActivityComment(): Promise<ApiResponse> {
-    return {
+  createActivityComment(): Promise<ApiResponse> {
+    return Promise.resolve({
       success: false,
       message: '活动评论功能已停用',
-    };
+    });
   }
 
   @Delete(':id/enroll')

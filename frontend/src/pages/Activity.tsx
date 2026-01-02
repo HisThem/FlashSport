@@ -231,24 +231,26 @@ const Activities: React.FC = () => {
           </div>
 
           {/* 分类筛选 */}
-          <div className="flex flex-wrap justify-center gap-2">
-            <button 
-              className={`btn btn-sm ${!searchParams.category_id ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => handleCategoryFilter(undefined)}
-              disabled={activitiesLoading}
-            >
-              全部活动
-            </button>
-            {categories.map(category => (
-              <button
-                key={category.id}
-                className={`btn btn-sm ${searchParams.category_id === category.id ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => handleCategoryFilter(category.id)}
+          <div className="flex justify-center mb-6">
+            <div className="bg-base-100/40 backdrop-blur-sm border border-base-200/30 rounded-full px-2 py-2 flex flex-wrap items-center gap-2">
+              <button 
+                className={`btn btn-sm rounded-full ${!searchParams.category_id ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleCategoryFilter(undefined)}
                 disabled={activitiesLoading}
               >
-                {category.name}
+                全部活动
               </button>
-            ))}
+              {categories.map(category => (
+                <button
+                  key={category.id}
+                  className={`btn btn-sm rounded-full ${searchParams.category_id === category.id ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => handleCategoryFilter(category.id)}
+                  disabled={activitiesLoading}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 排序 + 省市筛选 */}

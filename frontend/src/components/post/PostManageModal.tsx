@@ -1,7 +1,7 @@
 // "管理我的帖子" 功能
 import React from 'react';
-import { Post } from '../api/post';
-import { formatDate } from '../utils/date';
+import { Post } from '../../api/post';
+import { formatDate } from '../../utils/date';
 
 interface ManagePostsModalProps {
   isOpen: boolean;
