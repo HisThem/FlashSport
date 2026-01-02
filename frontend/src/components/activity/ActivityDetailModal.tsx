@@ -158,26 +158,6 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="font-medium">开始时间:</span>
-                <span>{getFriendlyDate(enrichedActivity.start_time)}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-medium">结束时间:</span>
-                <span>{getFriendlyDate(enrichedActivity.end_time)}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-medium">报名截止:</span>
-                <span>{getFriendlyDate(enrichedActivity.registration_deadline)}</span>
-                {!isExpired(enrichedActivity.registration_deadline) && (
-                  <span className="text-sm text-warning">
-                    ({getTimeLeft(enrichedActivity.registration_deadline)})
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
                 <span className="font-medium">费用:</span>
                 <span>{getFeeText(enrichedActivity.fee_type, enrichedActivity.fee_amount)}</span>
               </div>
@@ -242,6 +222,26 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                 </>
               )}
             </div>
+
+            <div className="flex items-center gap-2">
+                <span className="font-medium">开始时间:</span>
+                <span>{getFriendlyDate(enrichedActivity.start_time)}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-medium">结束时间:</span>
+                <span>{getFriendlyDate(enrichedActivity.end_time)}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-medium">报名截止:</span>
+                <span>{getFriendlyDate(enrichedActivity.registration_deadline)}</span>
+                {!isExpired(enrichedActivity.registration_deadline) && (
+                  <span className="text-sm text-warning">
+                    ({getTimeLeft(enrichedActivity.registration_deadline)})
+                  </span>
+                )}
+              </div>
           </div>
         </div>
 

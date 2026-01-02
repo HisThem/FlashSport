@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
 import PostFormModal from '../components/PostFormModal';
+import PostDetailModal from '../components/PostDetailModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import postAPI, { Post, CreatePostPayload } from '../api/post';
 import activityAPI, { Activity } from '../api/activity';
@@ -20,6 +21,8 @@ const Community: React.FC = () => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
     null,
   );
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [expandCommentOnOpen, setExpandCommentOnOpen] = useState(false);
   const currentUser = userAPI.getCurrentUserFromStorage();
 
   // 加载帖子列表
@@ -127,6 +130,16 @@ const Community: React.FC = () => {
     setEditingPost(null);
   };
 
+  const handleOpenPostDetail = (post: Post, expandComment: boolean = false) => {
+    setSelectedPost(post);
+    setExpandCommentOnOpen(expandComment);
+  };
+
+  const handleClosePostDetail = () => {
+    setSelectedPost(null);
+    setExpandCommentOnOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-pattern-overlay pt-20">
       <div className="container mx-auto px-4 py-8">
@@ -217,6 +230,7 @@ const Community: React.FC = () => {
                       onEdit={handleEditPost}
                       onViewActivity={handleViewActivity}
                       onLikeChange={handleLikeChange}
+                      onOpenDetail={handleOpenPostDetail}
                     />
                   </div>
                 ))}
@@ -279,6 +293,16 @@ const Community: React.FC = () => {
           onClose={() => setSelectedActivity(null)}
           onEnroll={() => {}}
           onCancelEnrollment={() => {}}
+        />
+      )}
+
+      {selectedPost && (
+        <PostDetailModal
+          isOpen={true}
+          post={selectedPost}
+          onClose={handleClosePostDetail}
+          onLikeChange={handleLikeChange}
+          expandCommentOnOpen={expandCommentOnOpen}
         />
       )}
     </div>
