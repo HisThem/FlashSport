@@ -60,7 +60,7 @@ export class PostService {
     limit: number;
     totalPages: number;
   }> {
-    const { page = 1, limit = 10, activity_id } = queryDto;
+    const { page = 1, limit = 10, activity_id, author_id } = queryDto;
     const skip = (page - 1) * limit;
 
     let query = this.postRepository
@@ -70,6 +70,10 @@ export class PostService {
 
     if (activity_id) {
       query = query.where('post.activity_id = :activity_id', { activity_id });
+    }
+
+    if (author_id) {
+      query = query.andWhere('post.author_id = :author_id', { author_id });
     }
 
     // 按创建时间倒序排列

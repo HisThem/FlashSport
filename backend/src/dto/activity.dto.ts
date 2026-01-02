@@ -167,6 +167,12 @@ export class ActivityQueryDto {
   category_id?: number;
 
   @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  @Type(() => Number)
+  organizer_id?: number;
+
+  @IsOptional()
   @IsString()
   keyword?: string;
 

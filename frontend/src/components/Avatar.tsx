@@ -1,9 +1,13 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface AvatarProps {
   username: string;
   avatarUrl?: string | null;
   size?: 'tiny' | 'small' | 'medium' | 'large';
+  userId?: number;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 const sizeClasses = {
@@ -39,11 +43,32 @@ const backgroundColors = [
   'bg-rose-500',
 ];
 
-const Avatar: React.FC<AvatarProps> = ({ username, avatarUrl, size = 'medium' }) => {
+const Avatar: React.FC<AvatarProps> = ({
+  username,
+  avatarUrl,
+  size = 'medium',
+  userId,
+  onClick,
+  clickable,
+}) => {
+  const navigate = useNavigate();
   const firstChar = username ? username.charAt(0).toUpperCase() : '?';
   const containerSize = sizeClasses[size];
   const textSize = textSizeClasses[size];
-  
+
+  // Determine if avatar should be clickable
+  const isClickable = clickable !== undefined ? clickable : !!userId;
+
+  // Handle click event
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering parent element's click event
+    if (onClick) {
+      onClick();
+    } else if (userId) {
+      navigate(`/user/${userId}`);
+    }
+  };
+
   // 基于用户名生成固定的颜色索引
   const getBackgroundColor = (username: string) => {
     if (!username) return 'bg-neutral';
@@ -58,10 +83,21 @@ const Avatar: React.FC<AvatarProps> = ({ username, avatarUrl, size = 'medium' })
   const backgroundColor = avatarUrl ? 'bg-neutral' : getBackgroundColor(username);
 
   return (
-    <div className={`avatar ${!avatarUrl ? 'avatar-placeholder' : ''}`}>
-      <div className={`${backgroundColor} text-white rounded-full ${containerSize} flex items-center justify-center`}>
+    <div
+      className={`avatar ${!avatarUrl ? 'avatar-placeholder' : ''} ${
+        isClickable ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+      }`}
+      onClick={isClickable ? handleClick : undefined}
+    >
+      <div
+        className={`${backgroundColor} text-white rounded-full ${containerSize} flex items-center justify-center`}
+      >
         {avatarUrl ? (
-          <img src={avatarUrl} alt={`${username}'s avatar`} className="w-full h-full object-cover rounded-full" />
+          <img
+            src={avatarUrl}
+            alt={`${username}'s avatar`}
+            className="w-full h-full object-cover rounded-full"
+          />
         ) : (
           <span className={`${textSize} font-semibold`}>{firstChar}</span>
         )}

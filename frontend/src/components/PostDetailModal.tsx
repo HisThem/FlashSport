@@ -135,8 +135,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
           <div className="p-6 flex flex-col h-full gap-4 overflow-hidden">
             {/* Author at top */}
             <div className="flex items-center gap-3">
-              <Avatar username={post.author?.username || ''} avatarUrl={post.author?.avatar_url} size="small" />
-              <div className="flex flex-col">
+              <Avatar
+                username={post.author?.username || ''}
+                avatarUrl={post.author?.avatar_url}
+                size="small"
+                userId={post.author?.id}
+              />
+              <div className="flex-col">
                 <span className="font-semibold text-base">{post.author?.username || '用户'}</span>
                 <span className="text-sm text-base-content/60">ID: {post.author?.id ?? '未知'}</span>
               </div>
@@ -174,6 +179,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                             username={comment.user?.username || '?'}
                             avatarUrl={comment.user?.avatar_url}
                             size="tiny"
+                            userId={comment.user?.id}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 text-sm">

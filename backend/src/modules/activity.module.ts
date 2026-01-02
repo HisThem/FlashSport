@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ActivityController } from '../controller/activity.controller';
@@ -11,17 +11,12 @@ import { UserModule } from './user.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Activity,
-      Category,
-      Enrollment,
-      ActivityImage,
-    ]),
+    TypeOrmModule.forFeature([Activity, Category, Enrollment, ActivityImage]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'fallback-secret-key',
       signOptions: { expiresIn: '7d' },
     }),
-    UserModule, // 导入UserModule以使用UserService
+    forwardRef(() => UserModule), // Use forwardRef to break circular dependency
   ],
   controllers: [ActivityController],
   providers: [ActivityService],
