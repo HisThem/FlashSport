@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Post, CreatePostPayload } from '../../api/post';
 import activityAPI, { Activity } from '../../api/activity';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
 interface PostFormModalProps {
   isOpen: boolean;
@@ -31,6 +32,13 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingEnrolled, setIsLoadingEnrolled] = useState(false);
   const [imagePreviewStatus, setImagePreviewStatus] = useState<ImagePreviewStatus>('idle');
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -139,6 +147,37 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
     setSearchResults([]);
   };
 
+  const handleCloseWithConfirm = () => {
+    // 检查是否有未保存的内容
+    const hasChanges = (editingPost && (
+      content !== editingPost.content ||
+      coverImageUrl !== (editingPost.cover_image_url || '') ||
+      selectedActivityId !== (editingPost.activity_id || null)
+    )) || (!editingPost && (content.trim() !== '' || coverImageUrl.trim() !== '' || selectedActivityId !== null));
+
+    if (hasChanges) {
+      setConfirmModal({
+        isOpen: true,
+        title: '确认关闭',
+        message: editingPost 
+          ? '取消后修改的内容将不被保存。确定要关闭吗？'
+          : '取消后输入的内容将不被保存。确定要关闭吗？',
+        confirmText: '确认关闭',
+        cancelText: '继续编辑',
+        type: 'warning',
+        onConfirm: () => {
+          resetForm();
+          onClose();
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        },
+        onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+      });
+    } else {
+      resetForm();
+      onClose();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -175,6 +214,8 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
   return (
     <div className="modal modal-open pt-[5rem] z-50">
       <div className="modal-box modal-bounce w-full max-w-5xl max-h-[90vh] overflow-y-auto p-0">
+        <ConfirmModal {...confirmModal} />
+        
         {/* Header */}
         <div className="sticky top-0 bg-base-100 border-b border-base-200 p-6 flex justify-between items-center z-10">
           <div>
@@ -187,7 +228,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           </div>
           <button
             className="btn btn-sm btn-circle btn-ghost"
-            onClick={onClose}
+            onClick={handleCloseWithConfirm}
             disabled={isLoading}
           >
             ✕
@@ -432,7 +473,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
         </form>
       </div>
 
-      <div className="modal-backdrop" onClick={onClose}></div>
+      <div className="modal-backdrop" onClick={handleCloseWithConfirm}></div>
     </div>
   );
 };

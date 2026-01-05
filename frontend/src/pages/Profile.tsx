@@ -6,6 +6,7 @@ import { Post } from '../api/post';
 import { useAuthGuard } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import Avatar from '../components/Avatar';
+import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import PostCard from '../components/post/PostCard';
 import ActivityCard from '../components/activity/ActivityCard';
 import PostDetailModal from '../components/post/PostDetailModal';
@@ -49,6 +50,13 @@ const Profile: React.FC = () => {
     oldPassword: '',
     newPassword: '',
     confirmNewPassword: ''
+  });
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
   });
 
   const extractItems = <T,>(response: any): T[] => {
@@ -226,28 +234,46 @@ const Profile: React.FC = () => {
       }
     }
 
-    try {
-      const updatedUser = await userAPI.updateProfile(profileForm);
-      setUser(updatedUser);
+    // 显示确认对话框
+    const message = wantsPasswordChange
+      ? '确定要修改个人信息并更新密码吗？'
+      : '确定要修改个人信息吗？';
 
-      if (wantsPasswordChange) {
-        const isValid = await userAPI.verifyToken();
-        if (!isValid) {
-          toast.error('登录状态已失效，请重新登录');
-          return;
+    setConfirmModal({
+      isOpen: true,
+      title: '确认修改',
+      message,
+      confirmText: '确认修改',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: async () => {
+        try {
+          const updatedUser = await userAPI.updateProfile(profileForm);
+          setUser(updatedUser);
+
+          if (wantsPasswordChange) {
+            const isValid = await userAPI.verifyToken();
+            if (!isValid) {
+              toast.error('登录状态已失效，请重新登录');
+              return;
+            }
+            await userAPI.changePassword(passwordForm);
+            toast.success('密码修改成功！');
+          }
+
+          setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
+          setIsEditing(false);
+          toast.success('个人资料更新成功！');
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error('保存资料或修改密码失败:', error);
+          const errorMessage = error instanceof Error ? error.message : '更新个人资料失败';
+          toast.error(errorMessage);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
         }
-        await userAPI.changePassword(passwordForm);
-        toast.success('密码修改成功！');
-      }
-
-      setPasswordForm({ oldPassword: '', newPassword: '', confirmNewPassword: '' });
-      setIsEditing(false);
-      toast.success('个人资料更新成功！');
-    } catch (error) {
-      console.error('保存资料或修改密码失败:', error);
-      const errorMessage = error instanceof Error ? error.message : '更新个人资料失败';
-      toast.error(errorMessage);
-    }
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   const handleOpenPostDetail = (post: Post, expandComment?: boolean) => {
@@ -408,6 +434,7 @@ const Profile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-pattern-overlay pt-32 pb-12">
+      <ConfirmModal {...confirmModal} />
       <div className="container mx-auto px-4 max-w-6xl space-y-8">
         {/* 顶部身份卡片 */}
         <div className="bg-base-100/80 backdrop-blur-sm border border-base-200 shadow-xl rounded-3xl p-6 md:p-8 flex flex-col gap-6">

@@ -3,6 +3,7 @@ import { Activity, CreateActivityRequest, UpdateActivityRequest, Category, FeeTy
 import activityAPI from '../../api/activity';
 import { validateRequired, validateNumber } from '../../utils/validation';
 import { PROVINCES, DEFAULT_PROVINCE, DEFAULT_CITY, getCitiesByProvince } from '../../utils/chinaRegions';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
 interface ActivityFormModalProps {
   isOpen: boolean;
@@ -27,6 +28,13 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   const [coverPreviewStatus, setCoverPreviewStatus] = useState<PreviewStatus>('idle');
   const [imagePreviewStatus, setImagePreviewStatus] = useState<Record<number, PreviewStatus>>({});
   const [availableCities, setAvailableCities] = useState<string[]>(() => getCitiesByProvince(DEFAULT_PROVINCE));
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -356,10 +364,54 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
   const handleClose = () => {
     if (!loading) {
-      onClose();
-      setTimeout(() => {
+      // 检查是否有未保存的修改
+      const hasChanges = activity ? (
+        formData.name !== activity.name ||
+        formData.description !== activity.description ||
+        formData.cover_image_url !== (activity.cover_image_url || '') ||
+        formData.province !== activity.province ||
+        formData.city !== activity.city ||
+        formData.address !== (activity.address || '') ||
+        formData.start_time !== activity.start_time.slice(0, 16) ||
+        formData.end_time !== activity.end_time.slice(0, 16) ||
+        formData.registration_deadline !== activity.registration_deadline.slice(0, 16) ||
+        formData.max_participants !== activity.max_participants ||
+        formData.fee_type !== activity.fee_type ||
+        formData.fee_amount !== activity.fee_amount ||
+        formData.category_id !== activity.category_id ||
+        JSON.stringify(formData.images) !== JSON.stringify(activity.images?.map(img => img.image_url) || [])
+      ) : (
+        formData.name.trim() !== '' ||
+        formData.description.trim() !== '' ||
+        formData.cover_image_url.trim() !== '' ||
+        formData.address.trim() !== '' ||
+        formData.images.length > 0
+      );
+
+      if (hasChanges) {
+        setConfirmModal({
+          isOpen: true,
+          title: '确认关闭',
+          message: '取消后修改的内容将不被保存。确定要关闭吗？',
+          confirmText: '确认关闭',
+          cancelText: '继续编辑',
+          type: 'warning',
+          onConfirm: () => {
+            resetForm();
+            onClose();
+            setTimeout(() => {
+              setConfirmModal(prev => ({ ...prev, isOpen: false }));
+            }, 300);
+          },
+          onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+        });
+      } else {
         resetForm();
-      }, 300);
+        onClose();
+        setTimeout(() => {
+          resetForm();
+        }, 300);
+      }
     }
   };
 
@@ -368,6 +420,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   return (
     <div className="modal modal-open pt-20">
       <div className="modal-box relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+        <ConfirmModal {...confirmModal} />
         <button 
           className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
           onClick={handleClose}

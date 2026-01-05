@@ -152,7 +152,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                 >
                   {post.author?.username || '用户'}
                 </span>
-                <span className="text-sm text-base-content/60">发布于 {formatDate(new Date(post.created_at))}</span>
+                <span className="text-sm text-base-content/60">发布于 {formatDate(post.created_at)}</span>
               </div>
             </div>
 
@@ -228,7 +228,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                                 {comment.user?.username || '用户'}
                               </span>
                               <span className="text-base-content/60">
-                                {formatDate(new Date(comment.create_time))}
+                                {formatDate(comment.create_time)}
                               </span>
                             </div>
                             <p className="mt-1 text-base-content/80 whitespace-pre-wrap break-words">

@@ -2,8 +2,9 @@ import Avatar from '../Avatar';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
 import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, formatActivityLocation } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -16,7 +17,7 @@ interface ActivityCardProps {
   isOwner?: boolean;
   canEditActivity?: (activity: Activity) => boolean;
   canCancelActivity?: (activity: Activity) => boolean;
-  showActivityFinishedButton?: boolean;
+  _showActivityFinishedButton?: boolean;
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
@@ -30,11 +31,19 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   isOwner = false,
   canEditActivity,
   canCancelActivity,
-  showActivityFinishedButton = false
+  _showActivityFinishedButton = false
 }) => {
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
   const navigate = useNavigate();
+  
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
 
   // 获取状态显示文本和样式
   const getStatusBadge = (activity: Activity) => {
@@ -111,15 +120,71 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     }
   };
 
+  const showEnrollConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmModal({
+      isOpen: true,
+      title: '确认报名',
+      message: `确定要报名参加「${enrichedActivity.name}」吗？`,
+      confirmText: '确认报名',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: () => {
+        onEnroll?.(enrichedActivity.id);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const showCancelEnrollmentConfirm = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消报名',
+      message: `确定要取消报名「${enrichedActivity.name}」吗？`,
+      confirmText: '确认取消',
+      cancelText: '保留报名',
+      type: 'warning',
+      onConfirm: () => {
+        onCancelEnrollment?.(enrichedActivity.id);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const showEditConfirm = () => {
+    onEdit?.(enrichedActivity);
+  };
+
+  const showCancelActivityConfirm = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消活动',
+      message: `确定要取消「${enrichedActivity.name}」吗？此操作不可撤销。`,
+      confirmText: '确认取消',
+      cancelText: '保留活动',
+      type: 'danger',
+      onConfirm: () => {
+        onCancelActivity?.(enrichedActivity);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
   return (
-    <div
-      className="card bg-base-100 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col cursor-pointer"
-      onClick={handleCardClick}
-      onKeyDown={handleCardKeyDown}
-      role="button"
-      tabIndex={0}
-    >
-      <figure className="relative flex-shrink-0">
+    <>
+      <ConfirmModal {...confirmModal} />
+      <div
+        className="card bg-base-100 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 h-full flex flex-col cursor-pointer"
+        onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
+        role="button"
+        tabIndex={0}
+      >
+        <figure className="relative flex-shrink-0">
         <img 
           src={enrichedActivity.cover_image_url || 'https://via.placeholder.com/400x200?text=活动图片'} 
           alt={enrichedActivity.name}
@@ -219,7 +284,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {/* 编辑活动按钮 */}
                 {onEdit && (
                   <button
-                    onClick={() => onEdit(enrichedActivity)}
+                    onClick={() => showEditConfirm()}
                     disabled={!canEditActivity || !canEditActivity(enrichedActivity)}
                     className={`btn btn-sm ${!canEditActivity || !canEditActivity(enrichedActivity) ? 'btn-disabled' : 'btn-outline'}`}
                   >
@@ -233,7 +298,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                 {/* 取消活动按钮 */}
                 {onCancelActivity && (
                   <button
-                    onClick={() => onCancelActivity(enrichedActivity)}
+                    onClick={() => showCancelActivityConfirm()}
                     disabled={!canCancelActivity || !canCancelActivity(enrichedActivity)}
                     className={`btn btn-sm ${!canCancelActivity || !canCancelActivity(enrichedActivity) ? 'btn-disabled' : 'btn-error'}`}
                   >
@@ -267,7 +332,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                     {canEnroll() && onEnroll && (
                       <button 
                         className="btn btn-primary btn-sm flex-1 sm:flex-none"
-                        onClick={() => onEnroll(enrichedActivity.id)}
+                        onClick={showEnrollConfirm}
                       >
                         立即报名
                       </button>
@@ -276,7 +341,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
                     {canCancelEnrollment() && onCancelEnrollment && (
                       <button 
                         className="btn btn-error btn-sm flex-1 sm:flex-none"
-                        onClick={() => onCancelEnrollment(enrichedActivity.id)}
+                        onClick={showCancelEnrollmentConfirm}
                       >
                         取消报名
                       </button>
@@ -288,7 +353,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

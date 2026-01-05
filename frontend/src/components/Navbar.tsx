@@ -3,12 +3,20 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import userAPI, { User } from '../api/user';
 import Avatar from './Avatar';
+import ConfirmModal, { ConfirmModalConfig } from './ConfirmModal';
 
 const Navbar: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const navigate = useNavigate();
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
 
   // 初始化用户状态和主题
   useEffect(() => {
@@ -69,8 +77,25 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const showLogoutConfirm = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认登出',
+      message: '确定要登出吗？',
+      confirmText: '确认登出',
+      cancelText: '取消',
+      type: 'warning',
+      onConfirm: () => {
+        handleLogout();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
   return (
     <div className="navbar bg-base-100/90 backdrop-blur-md shadow-lg fixed top-0 left-0 right-0 z-50">
+      <ConfirmModal {...confirmModal} />
       <div className="navbar-start">
         <div className="dropdown">
           <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
@@ -134,7 +159,7 @@ const Navbar: React.FC = () => {
 
           {isLoggedIn && (
             <button 
-              onClick={handleLogout}
+              onClick={showLogoutConfirm}
               className="btn btn-ghost btn-circle"
               title="登出"
             >

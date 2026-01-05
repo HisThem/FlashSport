@@ -5,6 +5,7 @@ import userAPI from '../../api/user';
 import { getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
 import { enrichActivityWithEnrollmentStatus, isRegistrationExpired, formatActivityLocation } from '../../utils/activity';
 import Avatar from '../Avatar';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 import { useNavigate } from 'react-router-dom';
 
 interface ActivityDetailModalProps {
@@ -29,6 +30,13 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
 
   useEffect(() => {
     if (isOpen && activity) {
@@ -48,6 +56,38 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const showEnrollConfirm = (activityId: number, activityName: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认报名',
+      message: `确定要报名参加「${activityName}」吗？`,
+      confirmText: '确认报名',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: () => {
+        onEnroll?.(activityId);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const showCancelEnrollmentConfirm = (activityId: number, activityName: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消报名',
+      message: `确定要取消报名「${activityName}」吗？`,
+      confirmText: '确认取消',
+      cancelText: '保留报名',
+      type: 'warning',
+      onConfirm: () => {
+        onCancelEnrollment?.(activityId);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   if (!isOpen || !activity) return null;
@@ -103,6 +143,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
   return (
     <>
+    <ConfirmModal {...confirmModal} />
     <div className="modal modal-open pt-20 z-40">
       <div className="modal-box modal-bounce relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
         <button 
@@ -211,7 +252,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                   {canEnroll && onEnroll && (
                     <button 
                       className="btn btn-primary w-full"
-                      onClick={() => onEnroll(enrichedActivity.id)}
+                      onClick={() => showEnrollConfirm(enrichedActivity.id, enrichedActivity.name)}
                     >
                       立即报名
                     </button>
@@ -220,7 +261,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                   {canCancelEnrollment && onCancelEnrollment && (
                     <button 
                       className="btn btn-error w-full"
-                      onClick={() => onCancelEnrollment(enrichedActivity.id)}
+                      onClick={() => showCancelEnrollmentConfirm(enrichedActivity.id, enrichedActivity.name)}
                     >
                       取消报名
                     </button>
