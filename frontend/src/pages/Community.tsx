@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/post/PostCard';
+import PostCardSkeleton from '../components/post/PostCardSkeleton';
 import PostFormModal from '../components/post/PostFormModal';
 import PostDetailModal from '../components/post/PostDetailModal';
 import ManagePostsModal from '../components/post/PostManageModal';
@@ -240,9 +241,12 @@ const Community: React.FC = () => {
         {/* 帖子列表 */}
         <div>
           {isLoading && posts.length === 0 ? (
-            <div className="text-center py-12">
-              <span className="loading loading-spinner"></span>
-              <p className="mt-2 text-base-content/60">加载中...</p>
+            <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 [column-gap:1.5rem]">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="mb-6">
+                  <PostCardSkeleton />
+                </div>
+              ))}
             </div>
           ) : posts.length === 0 ? (
             <div className="text-center py-12">

@@ -3,6 +3,7 @@ import { Activity, Category, GetActivitiesRequest } from '../api/activity';
 import activityAPI from '../api/activity';
 import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
+import ActivityCardSkeleton from '../components/activity/ActivityCardSkeleton';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
@@ -295,8 +296,12 @@ const Activities: React.FC = () => {
 
         {/* 活动列表 */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="loading loading-spinner loading-lg"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div key={index}>
+                <ActivityCardSkeleton />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="relative">
