@@ -10,6 +10,9 @@ interface PostCardProps {
   onViewActivity?: (activityId: number) => void;
   onLikeChange?: (postId: number, isLiked: boolean) => void;
   onOpenDetail?: (post: Post, expandComment?: boolean) => void;
+  onEdit?: (post: Post) => void;
+  onDelete?: (post: Post) => void;
+  showEngagement?: boolean;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -17,6 +20,9 @@ const PostCard: React.FC<PostCardProps> = ({
   onViewActivity,
   onLikeChange,
   onOpenDetail,
+  onEdit,
+  onDelete,
+  showEngagement = true,
 }) => {
   const navigate = useNavigate();
   const currentUser = userAPI.getCurrentUserFromStorage();
@@ -33,6 +39,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [commentCount, setCommentCount] = useState(post.comment_count || 0);
   const [isLiking, setIsLiking] = useState(false);
+
+  const showOwnerActions = !!(onEdit || onDelete);
 
   // Sync with post data when post changes
   useEffect(() => {
@@ -153,58 +161,89 @@ const PostCard: React.FC<PostCardProps> = ({
                <span className="whitespace-nowrap text-xs text-base-content/60">{formatDate(new Date(post.created_at))}</span>
              </div>
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <button
-              className="flex items-center gap-1 text-base-content/80 btn btn-ghost btn-xs px-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenDetail?.(post, true);
-              }}
-              type="button"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                className="w-4 h-4 stroke-current"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-                />
-              </svg>
-              <span>{commentCount}</span>
-            </button>
-            {currentUser && (
-              <button
-                className={`btn btn-ghost btn-xs gap-1 flex-shrink-0 ${
-                  isLiked ? 'text-error' : ''
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleLike();
-                }}
-                disabled={isLiking}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill={isLiked ? 'currentColor' : 'none'}
-                  viewBox="0 0 24 24"
-                  className="w-4 h-4 stroke-current"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                <span>{likeCount}</span>
-              </button>
-            )}
-          </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {showOwnerActions ? (
+                <>
+                  {onEdit && (
+                    <button
+                      className="btn btn-outline btn-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(post);
+                      }}
+                    >
+                      编辑
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="btn btn-error btn-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(post);
+                      }}
+                    >
+                      删除
+                    </button>
+                  )}
+                </>
+              ) : (
+                showEngagement && (
+                  <>
+                    <button
+                      className="flex items-center gap-1 text-base-content/80 btn btn-ghost btn-xs px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenDetail?.(post, true);
+                      }}
+                      type="button"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        className="w-4 h-4 stroke-current"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+                        />
+                      </svg>
+                      <span>{commentCount}</span>
+                    </button>
+                    {currentUser && (
+                      <button
+                        className={`btn btn-ghost btn-xs gap-1 flex-shrink-0 ${
+                          isLiked ? 'text-error' : ''
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLike();
+                        }}
+                        disabled={isLiking}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill={isLiked ? 'currentColor' : 'none'}
+                          viewBox="0 0 24 24"
+                          className="w-4 h-4 stroke-current"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                        <span>{likeCount}</span>
+                      </button>
+                    )}
+                  </>
+                )
+              )}
+            </div>
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ interface ActivityCardProps {
   isOwner?: boolean;
   canEditActivity?: (activity: Activity) => boolean;
   canCancelActivity?: (activity: Activity) => boolean;
+  renderActions?: (activity: Activity) => React.ReactNode;
   _showActivityFinishedButton?: boolean;
 }
 
@@ -31,6 +32,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   isOwner = false,
   canEditActivity,
   canCancelActivity,
+  renderActions,
   _showActivityFinishedButton = false
 }) => {
   // 确保活动有正确的报名状态信息
@@ -331,7 +333,9 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
             className="card-actions justify-end mt-auto pt-4 gap-2 flex-wrap"
             onClick={(e) => e.stopPropagation()}
           >
-            {isOwner && (onEdit || onCancelActivity) ? (
+            {renderActions ? (
+              renderActions(enrichedActivity)
+            ) : isOwner && (onEdit || onCancelActivity) ? (
               <>
                 {/* 编辑活动按钮 */}
                 {onEdit && (

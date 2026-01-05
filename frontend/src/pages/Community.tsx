@@ -200,7 +200,7 @@ const Community: React.FC = () => {
         </div>
 
         {/* 管理我的帖子入口 */}
-        {currentUser && (
+        {/* {currentUser && (
           <div className="flex justify-end gap-3 mb-8">
             <button
               className="btn btn-outline"
@@ -209,7 +209,7 @@ const Community: React.FC = () => {
               管理我的帖子
             </button>
           </div>
-        )}
+        )} */}
 
         {!currentUser && (
           <div className="alert alert-info mb-8">

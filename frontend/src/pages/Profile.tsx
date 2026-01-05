@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import userAPI, { User } from '../api/user';
-import activityAPI, { Activity } from '../api/activity';
-import { Post } from '../api/post';
+import activityAPI, { Activity, ActivityStatus } from '../api/activity';
+import postAPI, { Post, CreatePostPayload } from '../api/post';
 import { useAuthGuard } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import Avatar from '../components/Avatar';
@@ -11,6 +11,9 @@ import PostCard from '../components/post/PostCard';
 import ActivityCard from '../components/activity/ActivityCard';
 import PostDetailModal from '../components/post/PostDetailModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
+import PostFormModal from '../components/post/PostFormModal';
+import ActivityFormModal from '../components/activity/ActivityFormModal';
+import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
 
 const Profile: React.FC = () => {
@@ -26,6 +29,11 @@ const Profile: React.FC = () => {
   const [userPosts, setUserPosts] = useState<Post[]>([]);
   const [createdActivities, setCreatedActivities] = useState<Activity[]>([]);
   const [enrolledActivities, setEnrolledActivities] = useState<Activity[]>([]);
+  const [isPostFormOpen, setIsPostFormOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [isActivityFormOpen, setIsActivityFormOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [contentLoading, setContentLoading] = useState({
     posts: false,
     created: false,
@@ -158,7 +166,8 @@ const Profile: React.FC = () => {
       setContentLoading(prev => ({ ...prev, created: true }));
       try {
         const response = await userAPI.getUserCreatedActivities(userId, 1, 6);
-        setCreatedActivities(extractItems<Activity>(response));
+        const items = extractItems<Activity>(response);
+        setCreatedActivities(enrichActivitiesWithEnrollmentStatus(items));
       } catch (error) {
         console.error('加载用户创建的活动时出错:', error);
         toast.error('获取创建的活动失败');
@@ -171,7 +180,8 @@ const Profile: React.FC = () => {
       setContentLoading(prev => ({ ...prev, enrolled: true }));
       try {
         const response = await userAPI.getUserEnrolledActivities(userId, 1, 6);
-        setEnrolledActivities(extractItems<Activity>(response));
+        const items = extractItems<Activity>(response);
+        setEnrolledActivities(enrichActivitiesWithEnrollmentStatus(items));
       } catch (error) {
         console.error('加载用户参与的活动时出错:', error);
         toast.error('获取参与的活动失败');
@@ -321,6 +331,173 @@ const Profile: React.FC = () => {
 
   const handleCloseActivityDetail = () => setSelectedActivity(null);
 
+  const handleEditPost = (post: Post) => {
+    if (!isViewingSelf) return;
+    setEditingPost(post);
+    setIsPostFormOpen(true);
+  };
+
+  const handleSubmitPost = async (payload: CreatePostPayload) => {
+    if (!editingPost) return;
+    setIsActionLoading(true);
+    try {
+      const updated = await postAPI.updatePost(editingPost.id, payload);
+      setUserPosts(prev => prev.map(item => (item.id === updated.id ? updated : item)));
+      if (selectedPost?.id === updated.id) {
+        setSelectedPost(updated);
+      }
+      toast.success('帖子更新成功');
+      setIsPostFormOpen(false);
+      setEditingPost(null);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || '更新帖子失败');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleDeletePost = (post: Post) => {
+    if (!isViewingSelf) return;
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除帖子',
+      message: '删除后无法恢复，确定要删除吗？',
+      confirmText: '删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsActionLoading(true);
+          await postAPI.deletePost(post.id);
+          setUserPosts(prev => prev.filter(item => item.id !== post.id));
+          if (selectedPost?.id === post.id) {
+            setSelectedPost(null);
+          }
+          toast.success('帖子已删除');
+        } catch (error: any) {
+          toast.error(error?.response?.data?.message || '删除帖子失败');
+        } finally {
+          setIsActionLoading(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const handleClosePostForm = () => {
+    setIsPostFormOpen(false);
+    setEditingPost(null);
+  };
+
+  const refreshActivityData = async (activityId: number) => {
+    try {
+      const detail = await activityAPI.getActivityById(activityId);
+      const [enriched] = enrichActivitiesWithEnrollmentStatus([detail]);
+
+      setCreatedActivities(prev => {
+        const exists = prev.some(item => item.id === activityId);
+        if (!exists) return prev;
+        return prev.map(item => (item.id === activityId ? enriched : item));
+      });
+
+      setEnrolledActivities(prev => {
+        const exists = prev.some(item => item.id === activityId);
+        if (!exists) return prev;
+        if (!enriched.is_enrolled) {
+          return prev.filter(item => item.id !== activityId);
+        }
+        return prev.map(item => (item.id === activityId ? enriched : item));
+      });
+
+      if (selectedActivity?.id === activityId) {
+        setSelectedActivity(enriched);
+      }
+    } catch (error) {
+      console.error('刷新活动数据失败:', error);
+    }
+  };
+
+  const handleEditActivity = (activity: Activity) => {
+    if (!isViewingSelf) return;
+    setEditingActivity(activity);
+    setIsActivityFormOpen(true);
+  };
+
+  const handleActivityFormSuccess = async () => {
+    if (editingActivity) {
+      await refreshActivityData(editingActivity.id);
+    }
+    setIsActivityFormOpen(false);
+    setEditingActivity(null);
+  };
+
+  const handleDeleteActivity = (activity: Activity) => {
+    if (!isViewingSelf) return;
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除活动',
+      message: `删除「${activity.name}」后将无法恢复，确定删除吗？`,
+      confirmText: '删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          setIsActionLoading(true);
+          await activityAPI.deleteActivity(activity.id);
+          setCreatedActivities(prev => prev.filter(item => item.id !== activity.id));
+          setEnrolledActivities(prev => prev.filter(item => item.id !== activity.id));
+          if (selectedActivity?.id === activity.id) {
+            setSelectedActivity(null);
+          }
+          toast.success('活动已删除');
+        } catch (error: any) {
+          toast.error(error?.message || '删除活动失败');
+        } finally {
+          setIsActionLoading(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const handleCancelEnrollment = (activityId: number, activityName: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消报名',
+      message: `确定要取消「${activityName}」的报名吗？`,
+      confirmText: '取消报名',
+      cancelText: '保留报名',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          setIsActionLoading(true);
+          await activityAPI.cancelEnrollment(activityId);
+          setEnrolledActivities(prev => prev.filter(item => item.id !== activityId));
+          await refreshActivityData(activityId);
+          toast.success('取消报名成功');
+        } catch (error: any) {
+          toast.error(error?.message || '取消报名失败');
+        } finally {
+          setIsActionLoading(false);
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+        }
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const isActivityFinished = (activity: Activity) => {
+    const endTime = new Date(activity.end_time);
+    return activity.status === ActivityStatus.FINISHED || endTime <= new Date();
+  };
+
+  const isRegistrationClosed = (activity: Activity) => {
+    const deadline = new Date(activity.registration_deadline);
+    return activity.status === ActivityStatus.REGISTRATION_CLOSED || deadline <= new Date();
+  };
+
   const contentConfig = {
     posts: {
       items: userPosts,
@@ -375,6 +552,9 @@ const Profile: React.FC = () => {
                 onOpenDetail={handleOpenPostDetail}
                 onViewActivity={(activityId) => handleViewActivityById(activityId)}
                 onLikeChange={handlePostLikeChange}
+                onEdit={isViewingSelf ? handleEditPost : undefined}
+                onDelete={isViewingSelf ? handleDeletePost : undefined}
+                showEngagement={false}
               />
             </div>
           ))}
@@ -402,8 +582,65 @@ const Profile: React.FC = () => {
             <ActivityCard
               activity={activity}
               onViewDetail={handleOpenActivityDetail}
-              showActions={false}
+              showActions={contentFilter !== 'posts'}
               isOwner={contentFilter === 'created'}
+              renderActions={(item) => {
+                if (contentFilter === 'created' && isViewingSelf) {
+                  return (
+                    <>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => handleEditActivity(item)}
+                      >
+                        编辑
+                      </button>
+                      <button
+                        className="btn btn-error btn-sm"
+                        onClick={() => handleDeleteActivity(item)}
+                      >
+                        删除
+                      </button>
+                    </>
+                  );
+                }
+
+                if (contentFilter === 'enrolled') {
+                  if (item.status === ActivityStatus.CANCELLED) {
+                    return (
+                      <button className="btn btn-sm btn-disabled w-full sm:w-auto" disabled>
+                        已取消
+                      </button>
+                    );
+                  }
+
+                  if (isActivityFinished(item)) {
+                    return (
+                      <button className="btn btn-sm btn-disabled w-full sm:w-auto" disabled>
+                        已结束
+                      </button>
+                    );
+                  }
+
+                  if (isRegistrationClosed(item)) {
+                    return (
+                      <button className="btn btn-sm btn-disabled w-full sm:w-auto" disabled>
+                        已报名
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <button
+                      className="btn btn-error btn-sm w-full sm:w-auto"
+                      onClick={() => handleCancelEnrollment(item.id, item.name)}
+                    >
+                      取消报名
+                    </button>
+                  );
+                }
+
+                return null;
+              }}
             />
           </div>
         ))}
@@ -606,7 +843,7 @@ const Profile: React.FC = () => {
           </div>
 
           <div className="relative min-h-[200px]">
-            {currentContent.loading && (
+            {(currentContent.loading || isActionLoading) && (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-base-100/70 backdrop-blur-sm">
                 <span className="loading loading-spinner loading-lg"></span>
               </div>
@@ -617,6 +854,24 @@ const Profile: React.FC = () => {
           </div>
         </div>
       </div>
+
+        <PostFormModal
+          isOpen={isPostFormOpen}
+          onClose={handleClosePostForm}
+          onSubmit={handleSubmitPost}
+          editingPost={editingPost}
+          isLoading={isActionLoading}
+        />
+
+        <ActivityFormModal
+          isOpen={isActivityFormOpen}
+          activity={editingActivity}
+          onClose={() => {
+            setIsActivityFormOpen(false);
+            setEditingActivity(null);
+          }}
+          onSuccess={handleActivityFormSuccess}
+        />
 
       <PostDetailModal
         post={selectedPost}
