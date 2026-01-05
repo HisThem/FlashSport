@@ -2,12 +2,13 @@ import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import userAPI, { LoginRequest } from '../api/user';
+import { FormValidator } from '../utils/validation';
 // import { useGuestGuard } from '../hooks/useAuth';
 
 const Login: React.FC = () => {
   // 暂时注释掉访客守卫，以便调试
   // const isGuest = useGuestGuard();
-  
+
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: ''
@@ -15,6 +16,14 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    email: boolean;
+    password: boolean;
+  }>({ email: false, password: false });
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,15 +37,55 @@ const Login: React.FC = () => {
     }
   }, [location, navigate]);
 
+  // 验证单个字段
+  const validateField = (name: keyof LoginRequest, value: string) => {
+    let errorMessage: string | undefined;
+
+    switch (name) {
+      case 'email':
+        errorMessage = FormValidator.email(value);
+        break;
+      case 'password':
+        errorMessage = FormValidator.password(value);
+        break;
+    }
+
+    setFieldErrors(prev => ({ ...prev, [name]: errorMessage }));
+    return !errorMessage;
+  };
+
+  // 字段失焦时验证
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    validateField(name as keyof LoginRequest, value);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // 如果字段已经被触摸过，实时验证
+    if (touched[name as keyof typeof touched]) {
+      validateField(name as keyof LoginRequest, value);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
+
+    // 验证所有字段
+    const emailValid = validateField('email', formData.email);
+    const passwordValid = validateField('password', formData.password);
+    setTouched({ email: true, password: true });
+
+    if (!emailValid || !passwordValid) {
+      return; // 如果有验证错误，不提交
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -79,11 +128,17 @@ const Login: React.FC = () => {
                 type="email"
                 name="email"
                 placeholder="请输入邮箱"
-                className="input input-bordered"
+                className={`input input-bordered ${touched.email && fieldErrors.email ? 'input-error' : ''}`}
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 required
               />
+              {touched.email && fieldErrors.email && (
+                <label className="label">
+                  <span className="label-text-alt text-error">{fieldErrors.email}</span>
+                </label>
+              )}
             </div>
             <div className="form-control">
               <label className="label">
@@ -93,16 +148,23 @@ const Login: React.FC = () => {
                 type="password"
                 name="password"
                 placeholder="请输入密码"
-                className="input input-bordered"
+                className={`input input-bordered ${touched.password && fieldErrors.password ? 'input-error' : ''}`}
                 value={formData.password}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 required
               />
-              <label className="label">
-                <a href="#" className="label-text-alt link link-hover">
-                  忘记密码？
-                </a>
-              </label>
+              {touched.password && fieldErrors.password ? (
+                <label className="label">
+                  <span className="label-text-alt text-error">{fieldErrors.password}</span>
+                </label>
+              ) : (
+                <label className="label">
+                  <a href="#" className="label-text-alt link link-hover">
+                    忘记密码？
+                  </a>
+                </label>
+              )}
             </div>
             
             {successMessage && (
