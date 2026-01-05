@@ -67,7 +67,7 @@ const postAPI = {
   // 获取帖子列表
   getPosts: async (
     page: number = 1,
-    limit: number = 10,
+    limit: number = 20,
     activityId?: number,
   ): Promise<PostResponse> => {
     const params: any = { page, limit };

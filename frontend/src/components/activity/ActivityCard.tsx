@@ -261,7 +261,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           display: '-webkit-box',
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
-          maxHeight: '3rem'
+          lineHeight: '1.25rem',
+          maxHeight: '2.5rem'
         }}>
           {enrichedActivity.description}
         </p>

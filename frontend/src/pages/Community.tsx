@@ -36,12 +36,21 @@ const Community: React.FC = () => {
   });
   const currentUser = userAPI.getCurrentUserFromStorage();
 
+  const shufflePosts = (items: Post[]) => {
+    const shuffled = [...items];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   // 加载帖子列表
   const loadPosts = async (pageNum: number = 1) => {
     setIsLoading(true);
     try {
-      const result = await postAPI.getPosts(pageNum, 10);
-      setPosts(result.items);
+      const result = await postAPI.getPosts(pageNum, 20);
+      setPosts(shufflePosts(result.items));
       setPage(pageNum);
       setTotalPages(result.totalPages);
     } catch (error) {
