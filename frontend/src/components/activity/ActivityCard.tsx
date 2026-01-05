@@ -18,7 +18,6 @@ interface ActivityCardProps {
   canEditActivity?: (activity: Activity) => boolean;
   canCancelActivity?: (activity: Activity) => boolean;
   renderActions?: (activity: Activity) => React.ReactNode;
-  _showActivityFinishedButton?: boolean;
 }
 
 const ActivityCard: React.FC<ActivityCardProps> = ({
@@ -33,7 +32,6 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   canEditActivity,
   canCancelActivity,
   renderActions,
-  _showActivityFinishedButton = false
 }) => {
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);

@@ -233,7 +233,7 @@ const Register: React.FC = () => {
         <div className="text-center lg:text-left">
           <h1 className="text-5xl font-bold">加入我们</h1>
           <p className="py-6">
-            创建您的FlashSport账户，开启精彩的运动体验之旅！
+            创建您的MeetMates账户，开启精彩的活动与生活体验！
           </p>
         </div>
         

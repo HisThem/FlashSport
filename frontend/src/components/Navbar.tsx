@@ -123,7 +123,7 @@ const Navbar: React.FC = () => {
           </ul>
         </div>
         <Link to="/" className="btn btn-ghost text-xl font-bold text-primary">
-          ⚡ FlashSport
+          🎉 MeetMates
         </Link>
       </div>
       

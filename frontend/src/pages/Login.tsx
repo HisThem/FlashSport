@@ -115,7 +115,7 @@ const Login: React.FC = () => {
         <div className="text-center lg:text-left">
           <h1 className="text-5xl font-bold">立即登录</h1>
           <p className="py-6">
-            欢迎回到FlashSport！登录您的账户，继续您的运动之旅。
+            欢迎回到MeetMates！登录您的账户，继续你的活动与生活之旅。
           </p>
         </div>
         <div className="card bg-base-100 w-full max-w-sm shrink-0 shadow-2xl">

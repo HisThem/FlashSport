@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ToastProvider } from './components/Toast';
 import Navbar from './components/Navbar';
 import SportsBackground from './components/SportsBackground';
@@ -11,6 +11,34 @@ import Activities from './pages/Activity';
 import MyActivities from './pages/MyActivities';
 import Admin from './pages/Admin';
 import userAPI from './api/user';
+import Footer from './components/Footer';
+
+const AppContent: React.FC = () => {
+  const location = useLocation();
+  const hideFooter = location.pathname.startsWith('/my-activities');
+
+  return (
+    <div className="min-h-screen bg-base-100 flex flex-col relative">
+      <SportsBackground />
+      <Navbar />
+      <main className="flex-1 relative z-10">
+        <Routes>
+          <Route path="/" element={<Community />} />
+          <Route path="/community" element={<Community />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/user/:id" element={<Profile />} />
+          <Route path="/activities" element={<Activities />} />
+          <Route path="/my-activities" element={<MyActivities />} />
+          <Route path="/admin" element={<Admin />} />
+        </Routes>
+      </main>
+      {!hideFooter && <Footer />}
+    </div>
+  );
+};
 
 const App: React.FC = () => {
   // 应用启动时验证token
@@ -41,24 +69,7 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <Router>
-        <div className="min-h-screen bg-base-100 flex flex-col relative">
-          <SportsBackground />
-          <Navbar />
-          <main className="flex-1 relative z-10">
-            <Routes>
-              <Route path="/" element={<Community />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/profile/:id" element={<Profile />} />
-              <Route path="/user/:id" element={<Profile />} />
-              <Route path="/activities" element={<Activities />} />
-              <Route path="/my-activities" element={<MyActivities />} />
-              <Route path="/admin" element={<Admin />} />
-            </Routes>
-          </main>
-        </div>
+        <AppContent />
       </Router>
     </ToastProvider>
   );

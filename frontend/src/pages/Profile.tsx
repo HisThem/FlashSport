@@ -582,7 +582,7 @@ const Profile: React.FC = () => {
             <ActivityCard
               activity={activity}
               onViewDetail={handleOpenActivityDetail}
-              showActions={contentFilter !== 'posts'}
+              showActions
               isOwner={contentFilter === 'created'}
               renderActions={(item) => {
                 if (contentFilter === 'created' && isViewingSelf) {

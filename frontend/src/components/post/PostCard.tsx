@@ -158,7 +158,7 @@ const PostCard: React.FC<PostCardProps> = ({
                >
                  {displayName}
                </span>
-               <span className="whitespace-nowrap text-xs text-base-content/60">{formatDate(new Date(post.created_at))}</span>
+               <span className="whitespace-nowrap text-xs text-base-content/60">{formatDate(post.created_at)}</span>
              </div>
           </div>
             <div className="flex items-center gap-2 flex-shrink-0">
