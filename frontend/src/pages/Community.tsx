@@ -6,6 +6,7 @@ import PostFormModal from '../components/post/PostFormModal';
 import PostDetailModal from '../components/post/PostDetailModal';
 import ManagePostsModal from '../components/post/PostManageModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
+import FloatingActionButton from '../components/FloatingActionButton';
 import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import postAPI, { Post, CreatePostPayload } from '../api/post';
 import activityAPI, { Activity } from '../api/activity';
@@ -198,7 +199,7 @@ const Community: React.FC = () => {
           </p>
         </div>
 
-        {/* 发帖入口 */}
+        {/* 管理我的帖子入口 */}
         {currentUser && (
           <div className="flex justify-end gap-3 mb-8">
             <button
@@ -206,15 +207,6 @@ const Community: React.FC = () => {
               onClick={() => setShowManagePosts(true)}
             >
               管理我的帖子
-            </button>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowPostForm(true)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              发布帖子
             </button>
           </div>
         )}
@@ -375,6 +367,19 @@ const Community: React.FC = () => {
           onLikeChange={handleLikeChange}
           onViewActivity={handleViewActivity}
           expandCommentOnOpen={expandCommentOnOpen}
+        />
+      )}
+
+      {/* 悬浮发布帖子按钮 */}
+      {currentUser && (
+        <FloatingActionButton
+          onClick={() => setShowPostForm(true)}
+          label="发布帖子"
+          icon={
+            <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          }
         />
       )}
     </div>

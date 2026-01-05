@@ -240,9 +240,9 @@ const MyActivities: React.FC = () => {
           <h1 className="text-4xl font-bold text-primary mb-4">
             我的活动
           </h1>
-          <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
+          {/* <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
             管理您发布的活动和参与的活动
-          </p>
+          </p> */}
         </div>
 
         {/* 标签页 */}

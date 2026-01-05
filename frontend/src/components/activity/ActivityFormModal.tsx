@@ -439,41 +439,51 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal modal-open pt-20">
-      <div className="modal-box relative w-11/12 max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="modal modal-open pt-[5rem] z-50">
+      <div className="modal-box modal-bounce w-full max-w-5xl max-h-[90vh] overflow-y-auto p-0">
         <ConfirmModal {...confirmModal} />
-        <button 
-          className="btn btn-sm btn-circle btn-ghost absolute top-4 right-4 z-10"
-          onClick={handleClose}
-          disabled={loading}
-        >
-          ✕
-        </button>
-        <h3 className="font-bold text-lg mb-6">
-          {isEditMode ? '编辑活动' : '发布新活动'}
-        </h3>
         
-        {/* 报名截止时间警告 */}
-        {isEditMode && isRegistrationExpired && (
-          <div className="alert alert-warning mb-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 shrink-0 stroke-current"
-              fill="none"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <span>
-              <strong>注意：</strong>该活动报名时间已截止，无法修改活动内容。
-            </span>
+        {/* Header */}
+        <div className="sticky top-0 bg-base-100 border-b border-base-200 p-6 flex justify-between items-center z-10">
+          <div>
+            <h3 className="font-bold text-2xl">
+              {isEditMode ? '编辑活动' : '发布新活动'}
+            </h3>
+            <p className="text-sm text-base-content/60 mt-1">
+              {isEditMode ? '修改你的活动信息' : '创建一个新的体育活动，邀请志同道合的朋友参加'}
+            </p>
           </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6">{/* 基本信息 */}
+          <button
+            className="btn btn-sm btn-circle btn-ghost"
+            onClick={handleClose}
+            disabled={loading}
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
+          {/* 报名截止时间警告 */}
+          {isEditMode && isRegistrationExpired && (
+            <div className="alert alert-warning max-w-3xl mx-auto">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 shrink-0 stroke-current"
+                fill="none"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.962-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+              <span>
+                <strong>注意：</strong>该活动报名时间已截止，无法修改活动内容。
+              </span>
+            </div>
+          )}
+
+          <div className="form-control w-full max-w-3xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="label">
@@ -805,9 +815,10 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
               </button>
             </div>
           </div>
+          </div>
 
           {/* 表单按钮 */}
-          <div className="modal-action">
+          <div className="max-w-3xl mx-auto w-full flex justify-end gap-3">
             <button
               type="button"
               className="btn btn-ghost"

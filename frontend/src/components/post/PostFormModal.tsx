@@ -477,10 +477,10 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           </div>
 
           {/* 提交按钮 */}
-          <div className="modal-action gap-2 pt-4 max-w-2xl mx-auto w-full">
+          <div className="max-w-2xl mx-auto w-full flex justify-end gap-3 pt-4">
             <button
               type="button"
-              className="btn btn-ghost flex-1"
+              className="btn btn-ghost"
               onClick={handleCloseWithConfirm}
               disabled={isLoading}
             >
@@ -488,7 +488,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
             </button>
             <button
               type="submit"
-              className="btn btn-primary flex-1"
+              className="btn btn-primary"
               disabled={isLoading || !content.trim()}
             >
               {isLoading ? (

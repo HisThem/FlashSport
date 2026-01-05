@@ -6,6 +6,7 @@ import ActivityCard from '../components/activity/ActivityCard';
 import ActivityCardSkeleton from '../components/activity/ActivityCardSkeleton';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
+import FloatingActionButton from '../components/FloatingActionButton';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
@@ -211,21 +212,6 @@ const Activities: React.FC = () => {
           </h1>
         </div>
 
-        {/* 发布活动按钮 */}
-        {currentUser && (
-          <div className="flex justify-end mb-8">
-            <button
-              className="btn btn-primary"
-              onClick={() => setIsActivityFormOpen(true)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              发布活动
-            </button>
-          </div>
-        )}
-
         {/* 搜索和筛选区域 */}
         <div className="mb-8">
           {/* 分类筛选 */}
@@ -426,6 +412,14 @@ const Activities: React.FC = () => {
           loadActivities(false);
         }}
       />
+
+      {/* 悬浮发布按钮 */}
+      {currentUser && (
+        <FloatingActionButton
+          onClick={() => setIsActivityFormOpen(true)}
+          label="发布活动"
+        />
+      )}
 
     </div>
   );
