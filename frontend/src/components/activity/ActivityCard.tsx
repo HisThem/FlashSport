@@ -246,13 +246,21 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               </>
             ) : (
               <>
-                {/* 活动已结束按钮 - 在"我参与的活动"中显示 */}
-                {showActivityFinishedButton && enrichedActivity.status === ActivityStatus.FINISHED ? (
+                {/* 报名已截止按钮 */}
+                {enrichedActivity.status === ActivityStatus.REGISTRATION_CLOSED ? (
                   <button 
                     className="btn btn-sm btn-disabled w-full sm:w-auto"
                     disabled
                   >
-                    活动已结束
+                    报名已截止
+                  </button>
+                ) : enrichedActivity.status === ActivityStatus.FINISHED ? (
+                  /* 活动已结束按钮 */
+                  <button 
+                    className="btn btn-sm btn-disabled w-full sm:w-auto"
+                    disabled
+                  >
+                    已结束
                   </button>
                 ) : (
                   <>

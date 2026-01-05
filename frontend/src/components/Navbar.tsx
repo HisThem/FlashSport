@@ -113,7 +113,7 @@ const Navbar: React.FC = () => {
       
       <div className="navbar-end">
         {/* 主题切换按钮 */}
-        <div className="flex items-center gap-2 mr-4">
+        <div className="flex items-center gap-2">
           <button 
             onClick={toggleTheme}
             className="btn btn-ghost btn-circle"
@@ -131,11 +131,25 @@ const Navbar: React.FC = () => {
               </svg>
             )}
           </button>
-        </div>
-        
-        {isLoggedIn ? (
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
+
+          {isLoggedIn && (
+            <button 
+              onClick={handleLogout}
+              className="btn btn-ghost btn-circle"
+              title="登出"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          )}
+
+          {isLoggedIn ? (
+            <button 
+              onClick={() => navigate('/profile')}
+              className="btn btn-ghost btn-circle"
+              title="个人主页"
+            >
               {currentUser && (
                 <Avatar 
                   username={currentUser.username} 
@@ -143,39 +157,14 @@ const Navbar: React.FC = () => {
                   size="tiny"
                 />
               )}
+            </button>
+          ) : (
+            <div className="flex gap-2">
+              <Link to="/login" className="btn btn-ghost">登录</Link>
+              <Link to="/register" className="btn btn-primary">注册</Link>
             </div>
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
-              <li>
-                <Link to="/profile" className="justify-between">
-                  {currentUser?.username || '用户'}
-                </Link>
-              </li>
-              <li>
-                <Link to="/profile">
-                  个人资料
-                </Link>
-              </li>
-              <li>
-                <Link to="/community">
-                  社区
-                </Link>
-              </li>
-              <li>
-                <Link to="/my-activities">
-                  我的活动
-                </Link>
-              </li>
-              <li><a onClick={handleLogout}>登出</a></li>
-            </ul>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Link to="/login" className="btn btn-ghost">登录</Link>
-            <Link to="/register" className="btn btn-primary">注册</Link>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
