@@ -5,6 +5,7 @@ import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
+import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 
@@ -18,6 +19,13 @@ const MyActivities: React.FC = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
   const toast = useToast();
 
   useEffect(() => {
@@ -115,17 +123,25 @@ const MyActivities: React.FC = () => {
       return;
     }
 
-    if (!confirm('确定要取消这个活动吗？取消后无法恢复，所有已报名用户的报名也会被取消。')) {
-      return;
-    }
-
-    try {
-      await activityAPI.cancelActivity(activity.id);
-      await updateSingleActivityData(activity.id);
-      toast.success('活动已取消');
-    } catch (error: any) {
-      toast.error(error.message || '取消活动失败');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消',
+      message: '确定要取消这个活动吗？取消后无法恢复，所有已报名用户的报名也会被取消。',
+      confirmText: '确认取消',
+      cancelText: '保留活动',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await activityAPI.cancelActivity(activity.id);
+          await updateSingleActivityData(activity.id);
+          toast.success('活动已取消');
+        } catch (error: any) {
+          toast.error(error.message || '取消活动失败');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   const canCancelActivity = (activity: Activity) => {
@@ -209,6 +225,7 @@ const MyActivities: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-pattern-overlay pt-20">
+      <ConfirmModal {...confirmModal} />
       <div className="container mx-auto px-4 py-8">
         {/* 页面标题 */}
         <div className="text-center mb-8">

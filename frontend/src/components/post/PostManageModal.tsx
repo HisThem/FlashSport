@@ -1,7 +1,8 @@
 // "管理我的帖子" 功能
-import React from 'react';
+import React, { useState } from 'react';
 import { Post } from '../../api/post';
 import { formatDate } from '../../utils/date';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
 interface ManagePostsModalProps {
   isOpen: boolean;
@@ -20,9 +21,36 @@ const ManagePostsModal: React.FC<ManagePostsModalProps> = ({
   onDelete,
   onViewDetail,
 }) => {
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
+
+  const showDeleteConfirm = (postId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这条帖子吗？此操作不可撤销。',
+      confirmText: '确认删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: () => {
+        onDelete(postId);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
   if (!isOpen) return null;
 
   return (
+    <>
+    <ConfirmModal {...confirmModal} />
     <div className="modal modal-open pt-20 z-20">
       <div className="modal-box modal-bounce relative w-11/12 max-w-4xl h-[80vh] max-h-[80vh] p-0 overflow-hidden flex flex-col bg-base-100">
         {/* Header */}
@@ -153,10 +181,7 @@ const ManagePostsModal: React.FC<ManagePostsModalProps> = ({
                       </button>
                       <button
                         className="btn btn-ghost btn-sm gap-1 text-error whitespace-nowrap"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(post.id);
-                        }}
+                        onClick={(e) => showDeleteConfirm(post.id, e)}
                         title="删除"
                       >
                         <svg
@@ -184,6 +209,7 @@ const ManagePostsModal: React.FC<ManagePostsModalProps> = ({
       </div>
       <div className="modal-backdrop" onClick={onClose}></div>
     </div>
+    </>
   );
 };
 

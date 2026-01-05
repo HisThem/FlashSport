@@ -43,7 +43,7 @@ const ConfirmModal: React.FC<ConfirmModalConfig> = ({
 
   const modalContent = (
     <div className="modal modal-open z-[60]">
-      <div className="modal-box w-full max-w-md">
+      <div className="modal-box modal-bounce w-full max-w-md">
         <h3 className="font-bold text-lg">{title}</h3>
         <p className="py-4 text-base-content/80 whitespace-pre-line">{message}</p>
         <div className="modal-action">

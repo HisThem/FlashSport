@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '../components/PageLayout';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
+import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import activityAPI, { Activity, ActivityStatus, GetActivitiesRequest, Category } from '../api/activity';
 import { useCurrentUser } from '../hooks/useAuth';
 import { formatActivityLocation } from '../utils/activity';
@@ -25,6 +26,13 @@ const Admin: React.FC = () => {
   // 模态框状态
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
 
   // 检查管理员权限
   useEffect(() => {
@@ -90,32 +98,48 @@ const Admin: React.FC = () => {
 
   // 删除活动
   const handleDeleteActivity = async (id: number) => {
-    if (!confirm('确定要删除这个活动吗？此操作不可撤销。')) {
-      return;
-    }
-
-    try {
-      await activityAPI.deleteActivityAsAdmin(id);
-      toast.success('活动删除成功');
-      fetchActivities();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '删除活动失败');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这个活动吗？此操作不可撤销。',
+      confirmText: '确认删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await activityAPI.deleteActivityAsAdmin(id);
+          toast.success('活动删除成功');
+          fetchActivities();
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : '删除活动失败');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   // 取消活动
   const handleCancelActivity = async (id: number) => {
-    if (!confirm('确定要取消这个活动吗？')) {
-      return;
-    }
-
-    try {
-      await activityAPI.cancelActivityAsAdmin(id);
-      toast.success('活动已取消');
-      fetchActivities();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '取消活动失败');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消',
+      message: '确定要取消这个活动吗？',
+      confirmText: '确认取消',
+      cancelText: '保留活动',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          await activityAPI.cancelActivityAsAdmin(id);
+          toast.success('活动已取消');
+          fetchActivities();
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : '取消活动失败');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   // 更新活动状态
@@ -173,6 +197,7 @@ const Admin: React.FC = () => {
 
   return (
     <PageLayout>
+      <ConfirmModal {...confirmModal} />
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">活动管理</h1>

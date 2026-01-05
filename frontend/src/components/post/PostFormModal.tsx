@@ -149,11 +149,23 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
 
   const handleCloseWithConfirm = () => {
     // 检查是否有未保存的内容
-    const hasChanges = (editingPost && (
-      content !== editingPost.content ||
-      coverImageUrl !== (editingPost.cover_image_url || '') ||
-      selectedActivityId !== (editingPost.activity_id || null)
-    )) || (!editingPost && (content.trim() !== '' || coverImageUrl.trim() !== '' || selectedActivityId !== null));
+    // 对于编辑模式，比较当前内容是否与原始内容不同
+    // 对于新建模式，检查是否有任何输入
+    const isEditMode = !!editingPost;
+    
+    let hasChanges = false;
+    
+    if (isEditMode && editingPost) {
+      // 编辑模式：检查是否有修改
+      hasChanges = (
+        content !== editingPost.content ||
+        coverImageUrl !== (editingPost.cover_image_url || '') ||
+        selectedActivityId !== (editingPost.activity_id || null)
+      );
+    } else {
+      // 新建模式：检查是否有任何内容
+      hasChanges = content.trim() !== '' || coverImageUrl.trim() !== '' || selectedActivityId !== null;
+    }
 
     if (hasChanges) {
       setConfirmModal({
@@ -191,6 +203,27 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
       return;
     }
 
+    // 显示确认对话框
+    const message = editingPost
+      ? '确定要保存对帖子的修改吗？'
+      : '确定要发布这条新帖子吗？';
+
+    setConfirmModal({
+      isOpen: true,
+      title: editingPost ? '确认保存' : '确认发布',
+      message,
+      confirmText: editingPost ? '确认保存' : '确认发布',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: async () => {
+        await executeSubmit();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const executeSubmit = async () => {
     try {
       await onSubmit({
         content,
@@ -448,7 +481,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
             <button
               type="button"
               className="btn btn-ghost flex-1"
-              onClick={onClose}
+              onClick={handleCloseWithConfirm}
               disabled={isLoading}
             >
               取消

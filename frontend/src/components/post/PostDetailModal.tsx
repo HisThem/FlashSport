@@ -4,6 +4,7 @@ import Avatar from '../Avatar';
 import { formatDate } from '../../utils/date';
 import userAPI from '../../api/user';
 import { useNavigate } from 'react-router-dom';
+import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
 interface PostDetailModalProps {
   post: Post | null;
@@ -31,6 +32,13 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState<number>(post?.like_count || 0);
   const [commentCount, setCommentCount] = useState<number>(post?.comment_count || 0);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
   const currentUser = userAPI.getCurrentUserFromStorage();
 
   useEffect(() => {
@@ -67,29 +75,76 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   const handleSubmitComment = async () => {
     if (!post || !currentUser) return;
     if (!commentText.trim()) return;
-    setIsSubmittingComment(true);
-    try {
-      const comment = await postAPI.createComment(post.id, commentText.trim());
-      setComments((prev) => [comment, ...prev]);
-      setCommentText('');
-      setCommentCount((prev) => prev + 1);
-      setIsCommentExpanded(false);
-    } catch (error) {
-      console.error('发表评论失败', error);
-    } finally {
-      setIsSubmittingComment(false);
-    }
+    
+    setConfirmModal({
+      isOpen: true,
+      title: '确认发送',
+      message: '确定要发送这条评论吗？',
+      confirmText: '发送',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: async () => {
+        setIsSubmittingComment(true);
+        try {
+          const comment = await postAPI.createComment(post.id, commentText.trim());
+          setComments((prev) => [comment, ...prev]);
+          setCommentText('');
+          setCommentCount((prev) => prev + 1);
+          setIsCommentExpanded(false);
+        } catch (error) {
+          console.error('发表评论失败', error);
+        } finally {
+          setIsSubmittingComment(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!post || !currentUser) return;
-    try {
-      await postAPI.deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setCommentCount((prev) => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('删除评论失败', error);
+  const handleCancelComment = () => {
+    if (!commentText.trim()) {
+      setIsCommentExpanded(false);
+      setCommentText('');
+      return;
     }
+
+    setConfirmModal({
+      isOpen: true,
+      title: '确认取消',
+      message: '确定要放弃发送这条评论吗？',
+      confirmText: '确认取消',
+      cancelText: '继续编辑',
+      type: 'warning',
+      onConfirm: () => {
+        setIsCommentExpanded(false);
+        setCommentText('');
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这条评论吗？',
+      confirmText: '确认删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await postAPI.deleteComment(commentId);
+          setComments((prev) => prev.filter((c) => c.id !== commentId));
+          setCommentCount((prev) => Math.max(0, prev - 1));
+        } catch (error) {
+          console.error('删除评论失败', error);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
   };
 
   const handleLike = async () => {
@@ -112,6 +167,8 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
   if (!isOpen || !post) return null;
 
   return (
+    <>
+    <ConfirmModal {...confirmModal} />
     <div className="modal modal-open pt-20 z-30">
       <div className="modal-box modal-bounce relative w-11/12 max-w-6xl h-[90vh] max-h-[90vh] p-0 overflow-hidden bg-base-100">
         <button
@@ -266,10 +323,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
                     <div className="flex items-center justify-end gap-3">
                       <button
                         className="btn btn-ghost btn-sm"
-                        onClick={() => {
-                          setIsCommentExpanded(false);
-                          setCommentText('');
-                        }}
+                        onClick={handleCancelComment}
                       >
                         取消
                       </button>
@@ -345,6 +399,7 @@ const PostDetailModal: React.FC<PostDetailModalProps> = ({
       </div>
       <div className="modal-backdrop" onClick={onClose}></div>
     </div>
+    </>
   );
 };
 

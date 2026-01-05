@@ -5,6 +5,7 @@ import PostFormModal from '../components/post/PostFormModal';
 import PostDetailModal from '../components/post/PostDetailModal';
 import ManagePostsModal from '../components/post/PostManageModal';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
+import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import postAPI, { Post, CreatePostPayload } from '../api/post';
 import activityAPI, { Activity } from '../api/activity';
 import userAPI from '../api/user';
@@ -25,6 +26,13 @@ const Community: React.FC = () => {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [expandCommentOnOpen, setExpandCommentOnOpen] = useState(false);
   const [showManagePosts, setShowManagePosts] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+  });
   const currentUser = userAPI.getCurrentUserFromStorage();
 
   // 加载帖子列表
@@ -75,10 +83,35 @@ const Community: React.FC = () => {
 
   // 删除帖子
   const handleDeletePost = async (postId: number) => {
-    if (!window.confirm('确定要删除这条帖子吗？')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: '确定要删除这条帖子吗？',
+      confirmText: '确认删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await postAPI.deletePost(postId);
+          setPosts(posts.filter((p) => p.id !== postId));
+          toast.success('帖子删除成功');
+        } catch (error: any) {
+          console.error('删除帖子失败:', error);
+          toast.error(
+            error?.response?.data?.message || '删除帖子失败，请重试',
+          );
+        } finally {
+          setIsLoading(false);
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
 
+  // 直接删除帖子（用于管理模态框中，已经有确认了）
+  const handleDeletePostDirect = async (postId: number) => {
     setIsLoading(true);
     try {
       await postAPI.deletePost(postId);
@@ -295,7 +328,7 @@ const Community: React.FC = () => {
             setEditingPost(post);
             setShowPostForm(true);
           }}
-          onDelete={handleDeletePost}
+          onDelete={handleDeletePostDirect}
           onViewDetail={(post) => {
             setSelectedPost(post);
             setExpandCommentOnOpen(false);

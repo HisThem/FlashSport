@@ -306,6 +306,27 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       return;
     }
 
+    // 显示提交确认对话框
+    const message = isEditMode 
+      ? '确定要保存对活动的修改吗？'
+      : '确定要发布这个新活动吗？';
+
+    setConfirmModal({
+      isOpen: true,
+      title: isEditMode ? '确认保存' : '确认发布',
+      message,
+      confirmText: isEditMode ? '确认保存' : '确认发布',
+      cancelText: '取消',
+      type: 'info',
+      onConfirm: async () => {
+        await executeSubmit();
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const executeSubmit = async () => {
     setLoading(true);
     try {
       if (isEditMode && activity) {
