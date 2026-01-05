@@ -116,7 +116,7 @@ const Navbar: React.FC = () => {
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
             <li><Link to="/">首页</Link></li>
-            <li><Link to="/activities">活动项目</Link></li>
+            <li><Link to="/activities">活动广场</Link></li>
             {isLoggedIn && <li><Link to="/community">社区</Link></li>}
             {isLoggedIn && <li><Link to="/my-activities">我的活动</Link></li>}
             {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin">管理页面</Link></li>}
@@ -130,7 +130,7 @@ const Navbar: React.FC = () => {
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">
           <li><Link to="/" className="btn btn-ghost">社区</Link></li>
-          <li><Link to="/activities" className="btn btn-ghost">活动项目</Link></li>
+          <li><Link to="/activities" className="btn btn-ghost">活动广场</Link></li>
           {isLoggedIn && <li><Link to="/my-activities" className="btn btn-ghost">我的活动</Link></li>}
           {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin" className="btn btn-ghost">管理页面</Link></li>}
         </ul>

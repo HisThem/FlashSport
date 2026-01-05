@@ -282,8 +282,6 @@ const Community: React.FC = () => {
                   >
                     <PostCard
                       post={post}
-                      onDelete={handleDeletePost}
-                      onEdit={handleEditPost}
                       onViewActivity={handleViewActivity}
                       onLikeChange={handleLikeChange}
                       onOpenDetail={handleOpenPostDetail}

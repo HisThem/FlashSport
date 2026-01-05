@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Activity } from '../api/activity';
 import activityAPI from '../api/activity';
 import userAPI from '../api/user';
-import ActivityCard from '../components/activity/ActivityCard';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
 import ActivityFormModal from '../components/activity/ActivityFormModal';
+import ActivityTimeline from '../components/activity/ActivityTimeline';
 import ConfirmModal, { ConfirmModalConfig } from '../components/ConfirmModal';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
@@ -13,7 +13,7 @@ const MyActivities: React.FC = () => {
   const [myActivities, setMyActivities] = useState<Activity[]>([]);
   const [enrolledActivities, setEnrolledActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'published' | 'enrolled'>('published');
+  const [activeTab, setActiveTab] = useState<'all' | 'published' | 'enrolled'>('all');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -221,14 +221,22 @@ const MyActivities: React.FC = () => {
     );
   }
 
-  const currentActivities = activeTab === 'published' ? myActivities : enrolledActivities;
+  // 获取当前活动列表（根据选中的标签页）
+  const currentActivities = activeTab === 'all' 
+    ? [...myActivities, ...enrolledActivities.filter(e => !myActivities.some(m => m.id === e.id))]
+    : activeTab === 'published' 
+    ? myActivities 
+    : enrolledActivities;
+
+  // 计算所有活动的总数
+  const allActivitiesCount = myActivities.length + enrolledActivities.filter(e => !myActivities.some(m => m.id === e.id)).length;
 
   return (
-    <div className="min-h-screen bg-pattern-overlay pt-20">
+    <div className="h-screen overflow-hidden bg-pattern-overlay pt-20 flex flex-col">
       <ConfirmModal {...confirmModal} />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 flex-1 flex flex-col overflow-hidden">
         {/* 页面标题 */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex-shrink-0">
           <h1 className="text-4xl font-bold text-primary mb-4">
             我的活动
           </h1>
@@ -238,8 +246,14 @@ const MyActivities: React.FC = () => {
         </div>
 
         {/* 标签页 */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 flex-shrink-0">
           <div className="bg-base-100/40 backdrop-blur-sm border border-base-200/30 rounded-full px-2 py-2 flex flex-wrap items-center gap-2">
+            <button 
+              className={`btn btn-sm rounded-full ${activeTab === 'all' ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setActiveTab('all')}
+            >
+              所有活动 ({allActivitiesCount})
+            </button>
             <button 
               className={`btn btn-sm rounded-full ${activeTab === 'published' ? 'btn-primary' : 'btn-outline'}`}
               onClick={() => setActiveTab('published')}
@@ -255,76 +269,57 @@ const MyActivities: React.FC = () => {
           </div>
         </div>
 
-        {/* 发布活动按钮 */}
-        {activeTab === 'published' && (
-          <div className="flex justify-end mb-6">
-            <button 
-              className="btn btn-primary"
-              onClick={handleCreateActivity}
-            >
-              发布新活动
-            </button>
-          </div>
-        )}
-
         {/* 活动列表 */}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="loading loading-spinner loading-lg"></div>
-          </div>
-        ) : currentActivities.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentActivities.map((activity, index) => (
-              <div
-                key={activity.id}
-                className="activity-fade-up"
-                style={{ animationDelay: `${index * 80}ms` }}
-              >
-                <ActivityCard
-                  activity={activity}
-                  onViewDetail={handleViewDetail}
-                  onEdit={activeTab === 'published' ? handleEditActivity : undefined}
-                  onCancelEnrollment={activeTab === 'enrolled' ? handleCancelEnrollment : undefined}
-                  onCancelActivity={activeTab === 'published' ? handleCancelActivity : undefined}
-                  isOwner={activeTab === 'published'}
-                  showActions={true}
-                  canEditActivity={canEditActivity}
-                  canCancelActivity={canCancelActivity}
-                  showActivityFinishedButton={activeTab === 'enrolled'}
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">
-              {activeTab === 'published' ? '📝' : '🏃‍♂️'}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="loading loading-spinner loading-lg"></div>
             </div>
-            <h3 className="text-xl font-semibold text-base-content/80 mb-2">
-              {activeTab === 'published' ? '还没有发布任何活动' : '还没有参与任何活动'}
-            </h3>
-            <p className="text-base-content/60 mb-4">
-              {activeTab === 'published' 
-                ? '发布您的第一个活动，开始组织精彩的体育活动吧！' 
-                : '去活动页面找找感兴趣的活动参与吧！'}
-            </p>
-            {activeTab === 'published' ? (
-              <button 
-                className="btn btn-primary"
-                onClick={handleCreateActivity}
-              >
-                发布第一个活动
-              </button>
-            ) : (
-              <button 
-                className="btn btn-primary"
-                onClick={() => window.location.href = '/activity'}
-              >
-                浏览活动
-              </button>
-            )}
-          </div>
-        )}
+          ) : currentActivities.length > 0 ? (
+            <ActivityTimeline
+              activities={currentActivities}
+              onViewDetail={handleViewDetail}
+              onEdit={handleEditActivity}
+              onCancelEnrollment={handleCancelEnrollment}
+              onCancelActivity={handleCancelActivity}
+              canEditActivity={canEditActivity}
+              canCancelActivity={canCancelActivity}
+              myActivities={myActivities}
+              enrolledActivities={enrolledActivities}
+            />
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">
+                {activeTab === 'all' ? '🎯' : activeTab === 'published' ? '📝' : '🏃‍♂️'}
+              </div>
+              <h3 className="text-xl font-semibold text-base-content/80 mb-2">
+                {activeTab === 'all' ? '还没有任何活动' : activeTab === 'published' ? '还没有发布任何活动' : '还没有参与任何活动'}
+              </h3>
+              <p className="text-base-content/60 mb-4">
+                {activeTab === 'all'
+                  ? '发布您的第一个活动或参与已有活动，开始精彩的体育之旅吧！'
+                  : activeTab === 'published' 
+                  ? '发布您的第一个活动，开始组织精彩的体育活动吧！' 
+                  : '去活动页面找找感兴趣的活动参与吧！'}
+              </p>
+              {activeTab === 'all' || activeTab === 'published' ? (
+                <button 
+                  className="btn btn-primary"
+                  onClick={handleCreateActivity}
+                >
+                  {activeTab === 'all' ? '发布活动' : '发布第一个活动'}
+                </button>
+              ) : (
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => window.location.href = '/activity'}
+                >
+                  浏览活动
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 活动详情弹窗 */}
@@ -335,8 +330,8 @@ const MyActivities: React.FC = () => {
           setIsDetailModalOpen(false);
           setSelectedActivity(null);
         }}
-        onEdit={activeTab === 'published' ? handleEditActivity : undefined}
-        onCancelEnrollment={activeTab === 'enrolled' ? handleCancelEnrollment : undefined}
+        onEdit={activeTab === 'published' || (activeTab === 'all' && selectedActivity && myActivities.some(a => a.id === selectedActivity.id)) ? handleEditActivity : undefined}
+        onCancelEnrollment={activeTab === 'enrolled' || (activeTab === 'all' && selectedActivity && enrolledActivities.some(a => a.id === selectedActivity.id) && !myActivities.some(a => a.id === selectedActivity.id)) ? handleCancelEnrollment : undefined}
       />
 
       {/* 活动表单弹窗 */}

@@ -5,6 +5,7 @@ import userAPI from '../api/user';
 import ActivityCard from '../components/activity/ActivityCard';
 import ActivityCardSkeleton from '../components/activity/ActivityCardSkeleton';
 import ActivityDetailModal from '../components/activity/ActivityDetailModal';
+import ActivityFormModal from '../components/activity/ActivityFormModal';
 import { useToast } from '../components/Toast';
 import { enrichActivitiesWithEnrollmentStatus } from '../utils/activity';
 import { PROVINCES, getCitiesByProvince } from '../utils/chinaRegions';
@@ -16,6 +17,7 @@ const Activities: React.FC = () => {
   const [activitiesLoading, setActivitiesLoading] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isActivityFormOpen, setIsActivityFormOpen] = useState(false);
   const toast = useToast();
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
   const defaultProvince = currentUser?.province || undefined;
@@ -205,34 +207,27 @@ const Activities: React.FC = () => {
         {/* 页面标题 */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-primary mb-4">
-            活动项目
+            活动广场
           </h1>
-          <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
-            探索丰富多彩的体育活动，找到最适合您的运动项目，享受运动带来的乐趣！
-          </p>
         </div>
 
-        {/* 搜索和筛选区域 */}
-        <div className="mb-8 space-y-4">
-          {/* 搜索框 */}
-          <div className="flex gap-2 max-w-md mx-auto">
-            <input
-              type="text"
-              placeholder="搜索活动名称或描述..."
-              className="input input-bordered flex-1"
-              value={searchKeyword}
-              onChange={(e) => handleSearchInputChange(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button 
+        {/* 发布活动按钮 */}
+        {currentUser && (
+          <div className="flex justify-end mb-8">
+            <button
               className="btn btn-primary"
-              onClick={handleSearch}
-              disabled={activitiesLoading}
+              onClick={() => setIsActivityFormOpen(true)}
             >
-              搜索
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              发布活动
             </button>
           </div>
+        )}
 
+        {/* 搜索和筛选区域 */}
+        <div className="mb-8">
           {/* 分类筛选 */}
           <div className="flex justify-center mb-6">
             <div className="bg-base-100/40 backdrop-blur-sm border border-base-200/30 rounded-full px-2 py-2 flex flex-wrap items-center gap-2">
@@ -256,45 +251,65 @@ const Activities: React.FC = () => {
             </div>
           </div>
 
-          {/* 排序 + 省市筛选 */}
-          <div className="flex flex-wrap items-center gap-3 justify-start">
-            <select
-              className="select select-bordered select-sm w-36"
-              value={searchParams.sort}
-              onChange={(e) => handleSortChange(e.target.value)}
-              disabled={activitiesLoading}
-            >
-              <option value="newest">最新发布</option>
-              <option value="oldest">最早发布</option>
-              <option value="start_time">按开始时间</option>
-              <option value="participants">按参与人数</option>
-            </select>
+          {/* 筛选和搜索 - 左排序+省市，右搜索框 */}
+          <div className="flex gap-3 mb-6 items-center justify-between">
+            {/* 左侧：排序和省市筛选 */}
+            <div className="flex gap-3 items-center">
+              <select
+                className="select select-bordered select-sm w-36"
+                value={searchParams.sort}
+                onChange={(e) => handleSortChange(e.target.value)}
+                disabled={activitiesLoading}
+              >
+                <option value="newest">最新发布</option>
+                <option value="startTime">开始时间</option>
+                <option value="enrollmentRate">报名热度</option>
+              </select>
+              <select
+                className="select select-bordered select-sm w-36"
+                value={searchParams.province || ''}
+                onChange={(e) => handleProvinceChange(e.target.value)}
+                disabled={activitiesLoading}
+              >
+                <option value="">全部省份</option>
+                {PROVINCES.map(p => (
+                  <option key={p.name} value={p.name}>{p.name}</option>
+                ))}
+              </select>
+              <select
+                className="select select-bordered select-sm w-36"
+                value={searchParams.city || ''}
+                onChange={(e) => handleCityChange(e.target.value)}
+                disabled={activitiesLoading}
+              >
+                <option value="">全部城市</option>
+                {(searchParams.province ? getCitiesByProvince(searchParams.province) : []).map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
 
-            <select
-              className="select select-bordered select-sm w-36"
-              value={searchParams.province || ''}
-              onChange={(e) => handleProvinceChange(e.target.value)}
-              disabled={activitiesLoading}
-            >
-              <option value="">全部省份</option>
-              {PROVINCES.map((prov) => (
-                <option key={prov.name} value={prov.name}>{prov.name}</option>
-              ))}
-            </select>
-
-            <select
-              className="select select-bordered select-sm w-36"
-              value={searchParams.city || ''}
-              onChange={(e) => handleCityChange(e.target.value)}
-              disabled={activitiesLoading || !searchParams.province}
-            >
-              <option value="">全部城市</option>
-              {(searchParams.province ? getCitiesByProvince(searchParams.province) : []).map((city) => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
+            {/* 右侧：搜索框 */}
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                placeholder="搜索活动名称或描述..."
+                className="input input-bordered input-sm w-48"
+                value={searchKeyword}
+                onChange={(e) => handleSearchInputChange(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={handleSearch}
+                disabled={activitiesLoading}
+              >
+                搜索
+              </button>
+            </div>
           </div>
         </div>
+        
 
         {/* 活动列表 */}
         {loading ? (
@@ -398,6 +413,18 @@ const Activities: React.FC = () => {
         }}
         onEnroll={handleEnroll}
         onCancelEnrollment={handleCancelEnrollment}
+      />
+
+      {/* 发布活动表单Modal */}
+      <ActivityFormModal
+        isOpen={isActivityFormOpen}
+        activity={null}
+        onClose={() => setIsActivityFormOpen(false)}
+        onSuccess={() => {
+          setIsActivityFormOpen(false);
+          toast.success('活动发布成功');
+          loadActivities(false);
+        }}
       />
 
     </div>

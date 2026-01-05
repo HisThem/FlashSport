@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动时间轴</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --timeline-color: #ddd;
+            --accent-color: #3b82f6;
+            --text-main: #333;
+            --text-sub: #666;
+            --card-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            --tag-purple: #5c4df0;
+            --tag-green: #00cba0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* 时间轴垂直线 */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px; /* 线条位置 */
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--timeline-color);
+            z-index: 0;
+        }
+
+        /* 日期分割头 */
+        .date-header {
+            position: relative;
+            padding-left: 50px;
+            margin: 30px 0 15px 0;
+            font-weight: bold;
+            font-size: 1.1em;
+            color: var(--text-sub);
+            z-index: 1;
+        }
+        
+        .date-header::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: var(--text-sub);
+            border-radius: 50%;
+            border: 2px solid var(--bg-color);
+        }
+
+        /* 当前时间标记 */
+        .now-marker {
+            position: relative;
+            padding-left: 50px;
+            margin: 40px 0;
+            color: var(--accent-color);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .now-marker::before {
+            content: '';
+            position: absolute;
+            left: 13px;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            border: 4px solid #dbeafe; /* 光晕效果 */
+            z-index: 2;
+            animation: pulse 2s infinite;
+        }
+        
+        .now-line {
+            height: 1px;
+            flex-grow: 1;
+            background: var(--accent-color);
+            margin-left: 10px;
+            opacity: 0.5;
+            border-style: dashed;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* 时间轴项目容器 */
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 50px; /* 为时间轴留出空间 */
+        }
+
+        /* 时间点圆点 */
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border: 2px solid var(--accent-color);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        /* 左侧的具体时间文本 */
+        .time-label {
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            width: 60px; /* 稍微调整宽度适应布局 */
+            text-align: right;
+            font-size: 0.8em;
+            color: var(--text-sub);
+            display: none; /* 移动端默认隐藏左侧时间，集成在卡片内 */
+        }
+
+        /* ===== 卡片样式 (复刻截图) ===== */
+        .activity-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 顶部图片区域 */
+        .card-header {
+            height: 160px;
+            background-color: #333;
+            background-image: url('https://images.unsplash.com/photo-1534158914592-062992bbe900?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'); /* 乒乓球图片 */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* 标签 */
+        .tag {
+            position: absolute;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .tag-category {
+            top: 15px;
+            left: 15px;
+            background-color: var(--tag-purple);
+        }
+
+        .tag-status {
+            top: 15px;
+            right: 15px;
+            background-color: var(--tag-green);
+        }
+
+        /* 卡片内容区域 */
+        .card-body {
+            padding: 20px;
+        }
+
+        .card-title {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .card-desc {
+            font-size: 0.9em;
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* 信息行 (地址、时间等) */
+        .info-row {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        .info-row i {
+            width: 20px;
+            margin-right: 10px;
+            margin-top: 3px;
+            color: var(--tag-purple);
+        }
+
+        .price-text {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        /* 卡片底部 (用户和按钮) */
+        .card-footer {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background-color: #ddd;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .btn-edit {
+            background: white;
+            border: 1px solid #ccc;
+            color: #333;
+        }
+
+        .btn-cancel {
+            background: #ff4d4f;
+            color: white;
+        }
+
+        /* 响应式调整 */
+        @media (min-width: 768px) {
+            .timeline::before { left: 50%; }
+            .container { max-width: 800px; }
+            
+            .timeline-item {
+                width: 45%;
+                padding-left: 0;
+            }
+            
+            /* 偶数项在右边，奇数项在左边 */
+            .timeline-item:nth-child(odd) {
+                margin-left: auto; /* 右侧 */
+                padding-left: 40px;
+            }
+            
+            .timeline-item:nth-child(even) {
+                margin-right: auto; /* 左侧 */
+                padding-right: 40px;
+                text-align: left; /* 保持内容左对齐 */
+            }
+            
+            .timeline-item:nth-child(even) .card-footer {
+                flex-direction: row;
+            }
+
+            .timeline-item:nth-child(odd)::after { left: 13px; }
+            .timeline-item:nth-child(even)::after { right: -28px; left: auto; }
+
+            /* 修正中间线上的圆点位置 */
+            .timeline-item::after {
+                top: 20px;
+                /* 稍微复杂的定位来对齐中间线 */
+            }
+            
+            /* 在桌面端，我们可以把时间点显示在中间 */
+            .date-header { text-align: center; padding-left: 0; }
+            .date-header::before { left: 50%; transform: translateX(-50%); }
+
+            .now-marker { justify-content: center; padding-left: 0; }
+            .now-marker::before { left: 50%; transform: translateX(-50%); }
+            .now-line { display: none; } /* 桌面端简化 */
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="timeline" id="timeline-content">
+        </div>
+</div>
+
+<script>
+    // 1. 模拟数据：包含过去的活动、未来的活动，以及截图中的特定活动
+    const myEvents = [
+        {
+            id: 1,
+            title: "新手羽毛球局",
+            type: "羽毛球",
+            status: "已结束",
+            image: "https://images.unsplash.com/photo-1626224583764-84786071963f?auto=format&fit=crop&w=800&q=80",
+            desc: "周五晚上的快乐羽毛球，出汗为主，技术为辅。",
+            location: "苏州 工业园区 奥体中心",
+            time: "2026-01-25 19:00",
+            participants: "4/6人",
+            price: "¥ 45",
+            user: "Alice",
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alice"
+        },
+        // --- 截图中的活动 (注意时间是 2026-01-29) ---
+        {
+            id: 2,
+            title: "乒乓球训练",
+            type: "乒乓球",
+            status: "报名中",
+            image: "https://images.unsplash.com/photo-1534158914592-062992bbe900?auto=format&fit=crop&w=800&q=80", // 替换为乒乓球相关图
+            desc: "想提升球技，享受“国球”魅力吗？我们的乒乓球训练营火热招募中！无论您是初学者还是进阶高手，均有专业教练...",
+            location: "江苏 苏州 相城区阳澄湖大道588号 乒乓球馆3楼",
+            time: "2026-01-29 02:04",
+            participants: "1/10人",
+            price: "¥ 30",
+            user: "HeJunze",
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=HeJunze",
+            isTarget: true // 标记这个是目标卡片
+        },
+        {
+            id: 3,
+            title: "周末徒步 - 灵岩山",
+            type: "徒步",
+            status: "报名中",
+            image: "https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=800&q=80",
+            desc: "春暖花开，一起去爬山吧。包含午餐。",
+            location: "苏州 吴中区 灵岩山景区入口",
+            time: "2026-02-10 09:00",
+            participants: "5/20人",
+            price: "¥ 10",
+            user: "MountainKing",
+            avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+        }
+    ];
+
+    const timelineContainer = document.getElementById('timeline-content');
+
+    // 2. 渲染函数
+    function renderTimeline() {
+        const now = new Date(); // 当前物理时间
+        // 为了演示效果，假设当前时间是在第一个活动之后，第二个活动之前
+        // 实际使用时请去掉下面这行，使用真实的 new Date()
+        // const now = new Date("2026-01-27T12:00:00"); 
+
+        let hasRenderedNowMarker = false;
+        let lastDateStr = "";
+
+        // 按时间排序
+        myEvents.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+        myEvents.forEach((event, index) => {
+            const eventTime = new Date(event.time);
+            
+            // A. 判断是否需要插入“当前时间 Now”标记
+            // 如果还没有插入过标记，且当前事件的时间晚于现在，说明“现在”就在这个事件之前
+            if (!hasRenderedNowMarker && eventTime > now) {
+                renderNowMarker();
+                hasRenderedNowMarker = true;
+            }
+
+            // B. 处理日期分组 (Sparse logic: 只显示有活动的日期)
+            const dateStr = eventTime.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+            if (dateStr !== lastDateStr) {
+                const header = document.createElement('div');
+                header.className = 'date-header';
+                header.innerText = dateStr; // 例如：2026年1月29日
+                timelineContainer.appendChild(header);
+                lastDateStr = dateStr;
+            }
+
+            // C. 渲染卡片
+            const item = document.createElement('div');
+            item.className = 'timeline-item';
+            
+            // 如果是最近的未来活动，给个ID方便滚动
+            if (eventTime > now && !document.getElementById('next-event')) {
+                item.id = 'next-event'; 
+            }
+
+            item.innerHTML = `
+                <div class="activity-card">
+                    <div class="card-header" style="background-image: url('${event.image}')">
+                        <div class="tag tag-category">${event.type}</div>
+                        <div class="tag tag-status">${event.status}</div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${event.title}</h3>
+                        <p class="card-desc">${event.desc}</p>
+                        
+                        <div class="info-row">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>${event.location}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fa-regular fa-calendar"></i>
+                            <span>${event.time}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fa-solid fa-users-line"></i>
+                            <span>${event.participants}</span>
+                        </div>
+                        <div class="info-row">
+                            <i class="fa-solid fa-dollar-sign"></i>
+                            <span class="price-text">${event.price}</span>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="user-info">
+                                <img src="${event.avatar}" alt="User" class="user-avatar">
+                                <span class="user-name">${event.user}</span>
+                            </div>
+                            <div class="action-buttons">
+                                <button class="btn btn-edit"><i class="fa-regular fa-pen-to-square"></i> 编辑</button>
+                                <button class="btn btn-cancel"><i class="fa-solid fa-xmark"></i> 取消活动</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            timelineContainer.appendChild(item);
+        });
+
+        // 如果所有活动都已结束，Now标记放在最后
+        if (!hasRenderedNowMarker) {
+            renderNowMarker();
+        }
+    }
+
+    function renderNowMarker() {
+        const marker = document.createElement('div');
+        marker.className = 'now-marker';
+        marker.id = 'current-time-marker';
+        marker.innerHTML = `当前时间 <div class="now-line"></div>`;
+        timelineContainer.appendChild(marker);
+    }
+
+    // 执行渲染
+    renderTimeline();
+
+    // 3. 自动滚动逻辑
+    window.onload = () => {
+        // 优先滚动到 "Current Time" 标记
+        const nowMarker = document.getElementById('current-time-marker');
+        // 或者滚动到最近的一个活动 'next-event'
+        const nextEvent = document.getElementById('next-event');
+
+        const target = nowMarker || nextEvent;
+
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' // 垂直居中显示
+                });
+            }, 500); // 稍微延迟一点等待页面完全布局
+        }
+    };
+
+</script>
+
+</body>
+</html>
