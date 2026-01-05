@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Post } from '../../api/post';
 import { formatDate } from '../../utils/date';
 import Avatar from '../Avatar';
@@ -18,10 +18,6 @@ const PostCard: React.FC<PostCardProps> = ({
   onLikeChange,
   onOpenDetail,
 }) => {
-  const [isLiked, setIsLiked] = useState(post.is_liked || false);
-  const [likeCount, setLikeCount] = useState(post.like_count || 0);
-  const [commentCount, setCommentCount] = useState(post.comment_count || 0);
-  const [isLiking, setIsLiking] = useState(false);
   const navigate = useNavigate();
   const currentUser = userAPI.getCurrentUserFromStorage();
   const author = post.author;
@@ -29,11 +25,26 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayName = author?.username || '匿名用户';
   const activity = post.activity;
 
+  // Use ref to track post ID changes
+  const prevPostIdRef = useRef(post.id);
+
+  // Initialize state from post
+  const [isLiked, setIsLiked] = useState(post.is_liked || false);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
+  const [commentCount, setCommentCount] = useState(post.comment_count || 0);
+  const [isLiking, setIsLiking] = useState(false);
+
+  // Sync with post data when post changes
   useEffect(() => {
-    setIsLiked(post.is_liked || false);
-    setLikeCount(post.like_count || 0);
+    // Only reset like state when it's a different post
+    if (prevPostIdRef.current !== post.id) {
+      setIsLiked(post.is_liked || false);
+      setLikeCount(post.like_count || 0);
+      prevPostIdRef.current = post.id;
+    }
+    // Always update comment count
     setCommentCount(post.comment_count || 0);
-  }, [post.is_liked, post.like_count, post.comment_count]);
+  }, [post.id, post.comment_count]);
 
   const handleLike = async () => {
     if (!currentUser || isLiking) return;

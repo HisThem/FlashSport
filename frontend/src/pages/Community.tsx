@@ -142,8 +142,7 @@ const Community: React.FC = () => {
       } else {
         await postAPI.unlikePost(postId);
       }
-      // 重新加载帖子以获取最新的点赞数
-      loadPosts(page);
+      // Optimistic update handled in PostCard, no need to reload
     } catch (error: any) {
       console.error('操作失败:', error);
       throw error; // Re-throw for optimistic update rollback
