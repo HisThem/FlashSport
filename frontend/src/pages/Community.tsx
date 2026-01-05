@@ -146,6 +146,7 @@ const Community: React.FC = () => {
       loadPosts(page);
     } catch (error: any) {
       console.error('操作失败:', error);
+      throw error; // Re-throw for optimistic update rollback
     }
   };
 

@@ -184,6 +184,7 @@ const Activities: React.FC = () => {
       toast.success('报名成功');
     } catch (error: any) {
       toast.error(error.message || '报名失败');
+      throw error; // Re-throw for optimistic update rollback
     }
   };
 
@@ -194,6 +195,7 @@ const Activities: React.FC = () => {
       toast.success('取消报名成功');
     } catch (error: any) {
       toast.error(error.message || '取消报名失败');
+      throw error; // Re-throw for optimistic update rollback
     }
   };
 

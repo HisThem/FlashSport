@@ -2,7 +2,7 @@ import Avatar from '../Avatar';
 import { Activity, ActivityStatus, FeeType } from '../../api/activity';
 import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, formatActivityLocation } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmModal, { ConfirmModalConfig } from '../ConfirmModal';
 
@@ -36,7 +36,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
   const navigate = useNavigate();
-  
+
+  // Local state for optimistic updates
+  const [isEnrolled, setIsEnrolled] = useState(enrichedActivity.is_enrolled || false);
+  const [enrollmentCount, setEnrollmentCount] = useState(enrichedActivity.enrollment_count || 0);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
     isOpen: false,
     title: '',
@@ -44,6 +49,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
     onConfirm: () => {},
     onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
   });
+
+  // Update local state when props change
+  useEffect(() => {
+    setIsEnrolled(enrichedActivity.is_enrolled || false);
+    setEnrollmentCount(enrichedActivity.enrollment_count || 0);
+  }, [enrichedActivity.is_enrolled, enrichedActivity.enrollment_count]);
 
   // 获取状态显示文本和样式
   const getStatusBadge = (activity: Activity) => {
@@ -129,9 +140,29 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       confirmText: '确认报名',
       cancelText: '取消',
       type: 'info',
-      onConfirm: () => {
-        onEnroll?.(enrichedActivity.id);
+      onConfirm: async () => {
+        if (isEnrolling) return;
+
+        setIsEnrolling(true);
+        const previousIsEnrolled = isEnrolled;
+        const previousEnrollmentCount = enrollmentCount;
+
+        // Optimistic update
+        setIsEnrolled(true);
+        setEnrollmentCount(enrollmentCount + 1);
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
+
+        try {
+          if (onEnroll) {
+            await onEnroll(enrichedActivity.id);
+          }
+        } catch (error) {
+          // Rollback on error
+          setIsEnrolled(previousIsEnrolled);
+          setEnrollmentCount(previousEnrollmentCount);
+        } finally {
+          setIsEnrolling(false);
+        }
       },
       onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
     });
@@ -146,9 +177,29 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       confirmText: '确认取消',
       cancelText: '保留报名',
       type: 'warning',
-      onConfirm: () => {
-        onCancelEnrollment?.(enrichedActivity.id);
+      onConfirm: async () => {
+        if (isEnrolling) return;
+
+        setIsEnrolling(true);
+        const previousIsEnrolled = isEnrolled;
+        const previousEnrollmentCount = enrollmentCount;
+
+        // Optimistic update
+        setIsEnrolled(false);
+        setEnrollmentCount(Math.max(0, enrollmentCount - 1));
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
+
+        try {
+          if (onCancelEnrollment) {
+            await onCancelEnrollment(enrichedActivity.id);
+          }
+        } catch (error) {
+          // Rollback on error
+          setIsEnrolled(previousIsEnrolled);
+          setEnrollmentCount(previousEnrollmentCount);
+        } finally {
+          setIsEnrolling(false);
+        }
       },
       onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
     });
@@ -201,7 +252,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       <div className="card-body flex-1 flex flex-col">
         <h2 className="card-title">
           {enrichedActivity.name}
-          {(enrichedActivity.is_enrolled || false) && (
+          {isEnrolled && (
             <div className="badge badge-secondary">已报名</div>
           )}
         </h2>
@@ -238,7 +289,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
             </svg>
             <span className="text-base-content/80">
-              {enrichedActivity.enrollment_count || 0}/{enrichedActivity.max_participants}人
+              {enrollmentCount}/{enrichedActivity.max_participants}人
             </span>
           </div>
           

@@ -18,8 +18,10 @@ const PostCard: React.FC<PostCardProps> = ({
   onLikeChange,
   onOpenDetail,
 }) => {
-  const [isLiked, setIsLiked] = useState(false);
+  const [isLiked, setIsLiked] = useState(post.is_liked || false);
+  const [likeCount, setLikeCount] = useState(post.like_count || 0);
   const [commentCount, setCommentCount] = useState(post.comment_count || 0);
+  const [isLiking, setIsLiking] = useState(false);
   const navigate = useNavigate();
   const currentUser = userAPI.getCurrentUserFromStorage();
   const author = post.author;
@@ -28,14 +30,33 @@ const PostCard: React.FC<PostCardProps> = ({
   const activity = post.activity;
 
   useEffect(() => {
+    setIsLiked(post.is_liked || false);
+    setLikeCount(post.like_count || 0);
     setCommentCount(post.comment_count || 0);
-  }, [post.comment_count]);
+  }, [post.is_liked, post.like_count, post.comment_count]);
 
   const handleLike = async () => {
-    if (!currentUser) return;
-    setIsLiked(!isLiked);
-    if (onLikeChange) {
-      onLikeChange(post.id, !isLiked);
+    if (!currentUser || isLiking) return;
+
+    setIsLiking(true);
+    const newIsLiked = !isLiked;
+    const previousLikeCount = likeCount;
+    const previousIsLiked = isLiked;
+
+    // Optimistic update
+    setIsLiked(newIsLiked);
+    setLikeCount(newIsLiked ? likeCount + 1 : Math.max(0, likeCount - 1));
+
+    try {
+      if (onLikeChange) {
+        await onLikeChange(post.id, newIsLiked);
+      }
+    } catch (error) {
+      // Rollback on error
+      setIsLiked(previousIsLiked);
+      setLikeCount(previousLikeCount);
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -154,6 +175,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   e.stopPropagation();
                   handleLike();
                 }}
+                disabled={isLiking}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -168,7 +190,7 @@ const PostCard: React.FC<PostCardProps> = ({
                     d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                   />
                 </svg>
-                <span>{post.like_count}</span>
+                <span>{likeCount}</span>
               </button>
             )}
           </div>
