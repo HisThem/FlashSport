@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import userAPI, { User } from '../api/user';
 import Avatar from './Avatar';
@@ -17,6 +17,24 @@ const Navbar: React.FC = () => {
     onConfirm: () => {},
     onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
   });
+  const location = useLocation();
+
+  // 根据当前路径判断导航是否激活
+  const isActivePath = (paths: string | string[]) => {
+    const list = Array.isArray(paths) ? paths : [paths];
+    return list.some((p) => {
+      if (p === '/') {
+        // 首页/社区：在 '/' 或 '/community' 下都算激活
+        return location.pathname === '/' || location.pathname.startsWith('/community');
+      }
+      return location.pathname === p || location.pathname.startsWith(p + '/');
+    });
+  };
+
+  const desktopBtnClass = (active: boolean) =>
+    `btn btn-ghost${active ? ' btn-active text-primary' : ''}`;
+
+  const mobileItemClass = (active: boolean) => (active ? 'active' : '');
 
   // 初始化用户状态和主题
   useEffect(() => {
@@ -115,11 +133,27 @@ const Navbar: React.FC = () => {
           <ul
             tabIndex={0}
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
-            <li><Link to="/">首页</Link></li>
-            <li><Link to="/activities">活动广场</Link></li>
-            {isLoggedIn && <li><Link to="/community">社区</Link></li>}
-            {isLoggedIn && <li><Link to="/my-activities">我的活动</Link></li>}
-            {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin">管理页面</Link></li>}
+            <li>
+              <Link to="/" className={mobileItemClass(isActivePath(['/','/community']))}>首页</Link>
+            </li>
+            <li>
+              <Link to="/activities" className={mobileItemClass(isActivePath('/activities'))}>活动广场</Link>
+            </li>
+            {isLoggedIn && (
+              <li>
+                <Link to="/community" className={mobileItemClass(isActivePath(['/','/community']))}>社区</Link>
+              </li>
+            )}
+            {isLoggedIn && (
+              <li>
+                <Link to="/my-activities" className={mobileItemClass(isActivePath('/my-activities'))}>我的活动</Link>
+              </li>
+            )}
+            {isLoggedIn && currentUser?.role === 'admin' && (
+              <li>
+                <Link to="/admin" className={mobileItemClass(isActivePath('/admin'))}>管理页面</Link>
+              </li>
+            )}
           </ul>
         </div>
         <Link to="/" className="btn btn-ghost text-xl font-bold text-primary">
@@ -128,11 +162,23 @@ const Navbar: React.FC = () => {
       </div>
       
       <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-          <li><Link to="/" className="btn btn-ghost">社区</Link></li>
-          <li><Link to="/activities" className="btn btn-ghost">活动广场</Link></li>
-          {isLoggedIn && <li><Link to="/my-activities" className="btn btn-ghost">我的活动</Link></li>}
-          {isLoggedIn && currentUser?.role === 'admin' && <li><Link to="/admin" className="btn btn-ghost">管理页面</Link></li>}
+        <ul className="menu menu-horizontal px-1 gap-2">
+          <li>
+            <Link to="/" className={desktopBtnClass(isActivePath(['/','/community']))}>社区</Link>
+          </li>
+          <li>
+            <Link to="/activities" className={desktopBtnClass(isActivePath('/activities'))}>活动广场</Link>
+          </li>
+          {isLoggedIn && (
+            <li>
+              <Link to="/my-activities" className={desktopBtnClass(isActivePath('/my-activities'))}>我的活动</Link>
+            </li>
+          )}
+          {isLoggedIn && currentUser?.role === 'admin' && (
+            <li>
+              <Link to="/admin" className={desktopBtnClass(isActivePath('/admin'))}>管理页面</Link>
+            </li>
+          )}
         </ul>
       </div>
       

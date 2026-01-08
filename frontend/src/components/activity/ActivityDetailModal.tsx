@@ -15,6 +15,7 @@ interface ActivityDetailModalProps {
   onEnroll?: (activityId: number) => void;
   onCancelEnrollment?: (activityId: number) => void;
   onEdit?: (activity: Activity) => void;
+  onDelete?: (activity: Activity) => void;
 }
 
 const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
@@ -23,7 +24,8 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   onClose,
   onEnroll,
   onCancelEnrollment,
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -68,6 +70,22 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
       type: 'info',
       onConfirm: () => {
         onEnroll?.(activityId);
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
+  const showDeleteActivityConfirm = (activityToDelete: Activity) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: `删除后无法恢复，确定删除「${activityToDelete.name}」吗？`,
+      confirmText: '确认删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: () => {
+        onDelete?.(activityToDelete);
         setConfirmModal(prev => ({ ...prev, isOpen: false }));
       },
       onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
@@ -235,20 +253,9 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
             )}
 
             {/* 操作按钮 */}
-            <div className="space-y-2">
-              {isOwner && onEdit ? (
-                <>
-                  {enrichedActivity.status === ActivityStatus.RECRUITING && (
-                    <button 
-                      className="btn btn-primary w-full"
-                      onClick={() => onEdit(enrichedActivity)}
-                    >
-                      编辑活动
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
+            <div className="space-y-3">
+              {(canEnroll && onEnroll) || (canCancelEnrollment && onCancelEnrollment) ? (
+                <div className="space-y-2">
                   {canEnroll && onEnroll && (
                     <button 
                       className="btn btn-primary w-full"
@@ -266,7 +273,26 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                       取消报名
                     </button>
                   )}
-                </>
+                </div>
+              ) : null}
+
+              {isOwner && onEdit && enrichedActivity.status === ActivityStatus.RECRUITING && (
+                <div className={onDelete ? 'grid grid-cols-2 gap-2' : 'space-y-2'}>
+                  <button 
+                    className="btn btn-outline w-full"
+                    onClick={() => onEdit(enrichedActivity)}
+                  >
+                    编辑活动
+                  </button>
+                  {onDelete && (
+                    <button 
+                      className="btn btn-error w-full"
+                      onClick={() => showDeleteActivityConfirm(enrichedActivity)}
+                    >
+                      删除
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 

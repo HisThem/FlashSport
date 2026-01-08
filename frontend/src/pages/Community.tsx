@@ -127,6 +127,33 @@ const Community: React.FC = () => {
     }
   };
 
+  // 报名活动
+  const handleEnrollActivity = async (activityId: number) => {
+    try {
+      await activityAPI.enrollActivity(activityId);
+      // 重新拉取活动详情，确保报名状态和人数更新
+      const updated = await activityAPI.getActivityById(activityId);
+      setSelectedActivity(updated);
+      toast.success('报名成功');
+    } catch (error: any) {
+      console.error('报名失败:', error);
+      toast.error(error?.message || '报名失败，请稍后重试');
+    }
+  };
+
+  // 取消报名
+  const handleCancelEnrollmentActivity = async (activityId: number) => {
+    try {
+      await activityAPI.cancelEnrollment(activityId);
+      const updated = await activityAPI.getActivityById(activityId);
+      setSelectedActivity(updated);
+      toast.success('已取消报名');
+    } catch (error: any) {
+      console.error('取消报名失败:', error);
+      toast.error(error?.message || '取消报名失败，请稍后重试');
+    }
+  };
+
   // 关闭发帖表单时重置编辑状态
   const handleClosePostForm = () => {
     setShowPostForm(false);
@@ -150,10 +177,10 @@ const Community: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* 顶部标题 */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-4">社区</h1>
-          <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold text-primary mb-4">🎉 Meet Mates 🎉</h1>
+          {/* <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
             分享你的运动体验，发现志同道合的朋友
-          </p>
+          </p> */}
         </div>
 
         {/* 管理我的帖子入口 */}
@@ -311,8 +338,8 @@ const Community: React.FC = () => {
           isOpen={true}
           activity={selectedActivity}
           onClose={() => setSelectedActivity(null)}
-          onEnroll={() => {}}
-          onCancelEnrollment={() => {}}
+          onEnroll={handleEnrollActivity}
+          onCancelEnrollment={handleCancelEnrollmentActivity}
         />
       )}
 

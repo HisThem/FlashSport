@@ -250,12 +250,14 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       </figure>
       
       <div className="card-body flex-1 flex flex-col">
-        <h2 className="card-title">
-          {enrichedActivity.name}
+        <div className="flex items-start gap-2 mb-2">
+          <h2 className="flex-1 line-clamp-2 font-bold text-lg">
+            {enrichedActivity.name}
+          </h2>
           {isEnrolled && (
-            <div className="badge badge-secondary">已报名</div>
+            <div className="badge badge-secondary flex-shrink-0">已报名</div>
           )}
-        </h2>
+        </div>
         
         <p className="text-sm text-base-content/70 mb-4 overflow-hidden" style={{
           display: '-webkit-box',

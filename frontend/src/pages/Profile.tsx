@@ -403,11 +403,13 @@ const Profile: React.FC = () => {
 
       setEnrolledActivities(prev => {
         const exists = prev.some(item => item.id === activityId);
-        if (!exists) return prev;
         if (!enriched.is_enrolled) {
           return prev.filter(item => item.id !== activityId);
         }
-        return prev.map(item => (item.id === activityId ? enriched : item));
+        if (exists) {
+          return prev.map(item => (item.id === activityId ? enriched : item));
+        }
+        return [...prev, enriched];
       });
 
       if (selectedActivity?.id === activityId) {
@@ -438,7 +440,7 @@ const Profile: React.FC = () => {
       isOpen: true,
       title: '确认删除活动',
       message: `删除「${activity.name}」后将无法恢复，确定删除吗？`,
-      confirmText: '删除',
+      confirmText: '确认删除',
       cancelText: '取消',
       type: 'danger',
       onConfirm: async () => {
@@ -486,6 +488,37 @@ const Profile: React.FC = () => {
       },
       onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
     });
+  };
+
+  const handleCancelEnrollmentActivity = async (activityId: number) => {
+    try {
+      setIsActionLoading(true);
+      await activityAPI.cancelEnrollment(activityId);
+      await refreshActivityData(activityId);
+      toast.success('取消报名成功');
+    } catch (error: any) {
+      toast.error(error?.message || '取消报名失败');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleEnrollActivity = async (activityId: number) => {
+    if (!currentUser) {
+      toast.error('请先登录');
+      return;
+    }
+
+    try {
+      setIsActionLoading(true);
+      await activityAPI.enrollActivity(activityId);
+      await refreshActivityData(activityId);
+      toast.success('报名成功');
+    } catch (error: any) {
+      toast.error(error?.message || '报名失败');
+    } finally {
+      setIsActionLoading(false);
+    }
   };
 
   const isActivityFinished = (activity: Activity) => {
@@ -885,6 +918,10 @@ const Profile: React.FC = () => {
         activity={selectedActivity}
         isOpen={!!selectedActivity}
         onClose={handleCloseActivityDetail}
+        onEnroll={handleEnrollActivity}
+        onCancelEnrollment={handleCancelEnrollmentActivity}
+        onEdit={isViewingSelf ? handleEditActivity : undefined}
+        onDelete={isViewingSelf ? handleDeleteActivity : undefined}
       />
       {isFetchingActivityDetail && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-base-100/60">

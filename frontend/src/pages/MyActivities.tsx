@@ -144,6 +144,33 @@ const MyActivities: React.FC = () => {
     });
   };
 
+  const handleDeleteActivity = (activity: Activity) => {
+    setConfirmModal({
+      isOpen: true,
+      title: '确认删除',
+      message: '删除后无法恢复，确定要删除吗？',
+      confirmText: '删除',
+      cancelText: '取消',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await activityAPI.deleteActivity(activity.id);
+          setMyActivities(prev => prev.filter(a => a.id !== activity.id));
+          setEnrolledActivities(prev => prev.filter(a => a.id !== activity.id));
+          if (selectedActivity?.id === activity.id) {
+            setSelectedActivity(null);
+            setIsDetailModalOpen(false);
+          }
+          toast.success('活动已删除');
+        } catch (error: any) {
+          toast.error(error.message || '删除活动失败');
+        }
+        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+      },
+      onCancel: () => setConfirmModal(prev => ({ ...prev, isOpen: false })),
+    });
+  };
+
   const canCancelActivity = (activity: Activity) => {
     const now = new Date();
     const startTime = new Date(activity.start_time);
@@ -194,6 +221,21 @@ const MyActivities: React.FC = () => {
       toast.success('取消报名成功');
     } catch (error: any) {
       toast.error(error.message || '取消报名失败');
+    }
+  };
+
+  const handleEnroll = async (activityId: number) => {
+    if (!currentUser) {
+      toast.error('请先登录');
+      return;
+    }
+
+    try {
+      await activityAPI.enrollActivity(activityId);
+      await updateSingleActivityData(activityId);
+      toast.success('报名成功');
+    } catch (error: any) {
+      toast.error(error.message || '报名失败');
     }
   };
 
@@ -331,7 +373,9 @@ const MyActivities: React.FC = () => {
           setSelectedActivity(null);
         }}
         onEdit={activeTab === 'published' || (activeTab === 'all' && selectedActivity && myActivities.some(a => a.id === selectedActivity.id)) ? handleEditActivity : undefined}
-        onCancelEnrollment={activeTab === 'enrolled' || (activeTab === 'all' && selectedActivity && enrolledActivities.some(a => a.id === selectedActivity.id) && !myActivities.some(a => a.id === selectedActivity.id)) ? handleCancelEnrollment : undefined}
+        onEnroll={handleEnroll}
+        onCancelEnrollment={handleCancelEnrollment}
+        onDelete={activeTab === 'published' || (activeTab === 'all' && selectedActivity && myActivities.some(a => a.id === selectedActivity.id)) ? handleDeleteActivity : undefined}
       />
 
       {/* 活动表单弹窗 */}
