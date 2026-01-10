@@ -73,9 +73,34 @@ const Activities: React.FC = () => {
     
     try {
       const response = await activityAPI.getActivities(searchParams);
-      // 为活动列表添加报名状态信息
+      // 为活动列表添加报名状态信息，并在前端进行排序
       const enrichedActivities = enrichActivitiesWithEnrollmentStatus(response.items);
-      setActivities(enrichedActivities);
+
+      const statusPriority: Record<string, number> = {
+        [ 'recruiting' ]: 0,
+        [ 'registration_closed' ]: 1,
+        [ 'ongoing' ]: 2,
+        [ 'finished' ]: 3,
+        [ 'cancelled' ]: 4,
+      };
+
+      const sortedActivities = [...enrichedActivities].sort((a, b) => {
+        const sa = statusPriority[a.status] ?? 99;
+        const sb = statusPriority[b.status] ?? 99;
+        if (sa !== sb) return sa - sb;
+
+        switch (searchParams.sort) {
+          case 'start_time':
+            return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
+          case 'participants':
+            return (b.enrollment_count || 0) - (a.enrollment_count || 0);
+          case 'newest':
+          default:
+            return new Date(b.created_at || b.start_time).getTime() - new Date(a.created_at || a.start_time).getTime();
+        }
+      });
+
+      setActivities(sortedActivities);
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error('加载活动失败:', error);
@@ -248,8 +273,8 @@ const Activities: React.FC = () => {
                 disabled={activitiesLoading}
               >
                 <option value="newest">最新发布</option>
-                <option value="startTime">开始时间</option>
-                <option value="enrollmentRate">报名热度</option>
+                <option value="start_time">最早开始</option>
+                <option value="participants">报名热度</option>
               </select>
               <select
                 className="select select-bordered select-sm w-36"

@@ -151,7 +151,7 @@ const Navbar: React.FC = () => {
             )}
             {isLoggedIn && currentUser?.role === 'admin' && (
               <li>
-                <Link to="/admin" className={mobileItemClass(isActivePath('/admin'))}>管理页面</Link>
+                <Link to="/admin" className={mobileItemClass(isActivePath('/admin'))}>活动管理</Link>
               </li>
             )}
           </ul>
@@ -176,7 +176,7 @@ const Navbar: React.FC = () => {
           )}
           {isLoggedIn && currentUser?.role === 'admin' && (
             <li>
-              <Link to="/admin" className={desktopBtnClass(isActivePath('/admin'))}>管理页面</Link>
+              <Link to="/admin" className={desktopBtnClass(isActivePath('/admin'))}>活动管理</Link>
             </li>
           )}
         </ul>

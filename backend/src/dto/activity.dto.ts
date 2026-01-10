@@ -11,7 +11,7 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ActivityStatus, FeeType } from '../entities/activity.entity';
+import { ActivityStatus } from '../entities/activity.entity';
 
 export class CreateActivityDto {
   @IsString()
@@ -51,9 +51,6 @@ export class CreateActivityDto {
   @IsPositive()
   @Type(() => Number)
   max_participants: number;
-
-  @IsEnum(FeeType)
-  fee_type: FeeType;
 
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
@@ -118,10 +115,6 @@ export class UpdateActivityDto {
   max_participants?: number;
 
   @IsOptional()
-  @IsEnum(FeeType)
-  fee_type?: FeeType;
-
-  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Type(() => Number)
@@ -171,10 +164,6 @@ export class ActivityQueryDto {
   @IsOptional()
   @IsEnum(ActivityStatus)
   status?: ActivityStatus;
-
-  @IsOptional()
-  @IsEnum(FeeType)
-  fee_type?: FeeType;
 
   @IsOptional()
   @IsString()

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, CreateActivityRequest, UpdateActivityRequest, Category, FeeType } from '../../api/activity';
+import { Activity, CreateActivityRequest, UpdateActivityRequest, Category } from '../../api/activity';
+import userAPI from '../../api/user';
 import activityAPI from '../../api/activity';
 import { validateRequired, validateNumber } from '../../utils/validation';
 import { PROVINCES, DEFAULT_PROVINCE, DEFAULT_CITY, getCitiesByProvince } from '../../utils/chinaRegions';
@@ -28,6 +29,12 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   const [coverPreviewStatus, setCoverPreviewStatus] = useState<PreviewStatus>('idle');
   const [imagePreviewStatus, setImagePreviewStatus] = useState<Record<number, PreviewStatus>>({});
   const [availableCities, setAvailableCities] = useState<string[]>(() => getCitiesByProvince(DEFAULT_PROVINCE));
+  const [hasPrefilledLocation, setHasPrefilledLocation] = useState(false);
+  const [prefilledLocation, setPrefilledLocation] = useState({
+    province: DEFAULT_PROVINCE,
+    city: getCitiesByProvince(DEFAULT_PROVINCE)[0] || DEFAULT_CITY,
+    address: '',
+  });
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
     isOpen: false,
     title: '',
@@ -47,7 +54,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     end_time: '',
     registration_deadline: '',
     max_participants: 10,
-    fee_type: FeeType.FREE,
     fee_amount: 0,
     category_id: 0,
     images: [] as string[]
@@ -75,7 +81,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           end_time: activity.end_time.slice(0, 16),
           registration_deadline: activity.registration_deadline.slice(0, 16),
           max_participants: activity.max_participants,
-          fee_type: activity.fee_type,
           fee_amount: activity.fee_amount,
           category_id: activity.category_id,
           images: activity.images?.map(img => img.image_url) || []
@@ -83,9 +88,49 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       } else {
         // 创建模式：重置表单
         resetForm();
+        prefillLocationFromProfile();
       }
     }
   }, [isOpen, activity]);
+
+  const prefillLocationFromProfile = async () => {
+    if (isEditMode || hasPrefilledLocation) return;
+    try {
+      let user = userAPI.getCurrentUserFromStorage();
+
+      if (!user) {
+        try {
+          user = await userAPI.getCurrentUser();
+        } catch (err) {
+          console.error('获取用户信息失败，无法预填地址:', err);
+        }
+      }
+
+      if (!user) return;
+
+      const province = user.province || DEFAULT_PROVINCE;
+      const cities = getCitiesByProvince(province);
+      const preferredCity = user.city && cities.includes(user.city)
+        ? user.city
+        : (cities[0] || DEFAULT_CITY);
+
+      setAvailableCities(cities);
+      setFormData(prev => ({
+        ...prev,
+        province,
+        city: preferredCity,
+        address: (user as any).address || prev.address,
+      }));
+      setPrefilledLocation({
+        province,
+        city: preferredCity,
+        address: (user as any).address || '',
+      });
+      setHasPrefilledLocation(true);
+    } catch (error) {
+      console.error('预填地址失败:', error);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -102,6 +147,12 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   const resetForm = () => {
     const cities = getCitiesByProvince(DEFAULT_PROVINCE);
     setAvailableCities(cities);
+    setHasPrefilledLocation(false);
+    setPrefilledLocation({
+      province: DEFAULT_PROVINCE,
+      city: cities[0] || DEFAULT_CITY,
+      address: '',
+    });
     setFormData({
       name: '',
       description: '',
@@ -113,7 +164,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
       end_time: '',
       registration_deadline: '',
       max_participants: 10,
-      fee_type: FeeType.FREE,
       fee_amount: 0,
       category_id: categories.length > 0 ? categories[0].id : 0,
       images: []
@@ -167,13 +217,11 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   };
 
   const addImage = () => {
-    const url = prompt('请输入图片URL:');
-    if (url && url.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        images: [...prev.images, url.trim()]
-      }));
-    }
+    // 直接新增一个空的输入框，便于用户手动填入 URL
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ''],
+    }));
   };
 
   const removeImage = (index: number) => {
@@ -274,7 +322,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
     if (!validateNumber(formData.max_participants, 1)) {
       newErrors.max_participants = '最大参与人数必须大于0';
     }
-    if (formData.fee_type !== FeeType.FREE && !validateNumber(formData.fee_amount, 0)) {
+    if (!validateNumber(formData.fee_amount, 0)) {
       newErrors.fee_amount = '费用金额不能为负数';
     }
 
@@ -342,7 +390,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           end_time: formData.end_time,
           registration_deadline: formData.registration_deadline,
           max_participants: formData.max_participants,
-          fee_type: formData.fee_type,
           fee_amount: formData.fee_amount,
           category_id: formData.category_id,
           image_urls: formData.images
@@ -365,7 +412,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           end_time: formData.end_time,
           registration_deadline: formData.registration_deadline,
           max_participants: formData.max_participants,
-          fee_type: formData.fee_type,
           fee_amount: formData.fee_amount,
           category_id: formData.category_id,
           image_urls: formData.images
@@ -386,6 +432,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
   const handleClose = () => {
     if (!loading) {
       // 检查是否有未保存的修改
+      const baseCategoryId = categories[0]?.id ?? 0;
       const hasChanges = activity ? (
         formData.name !== activity.name ||
         formData.description !== activity.description ||
@@ -397,7 +444,6 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         formData.end_time !== activity.end_time.slice(0, 16) ||
         formData.registration_deadline !== activity.registration_deadline.slice(0, 16) ||
         formData.max_participants !== activity.max_participants ||
-        formData.fee_type !== activity.fee_type ||
         formData.fee_amount !== activity.fee_amount ||
         formData.category_id !== activity.category_id ||
         JSON.stringify(formData.images) !== JSON.stringify(activity.images?.map(img => img.image_url) || [])
@@ -406,6 +452,15 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         formData.description.trim() !== '' ||
         formData.cover_image_url.trim() !== '' ||
         formData.address.trim() !== '' ||
+        formData.start_time.trim() !== '' ||
+        formData.end_time.trim() !== '' ||
+        formData.registration_deadline.trim() !== '' ||
+        formData.province !== prefilledLocation.province ||
+        formData.city !== prefilledLocation.city ||
+        formData.address !== prefilledLocation.address ||
+        formData.max_participants !== 10 ||
+        formData.fee_amount !== 0 ||
+        formData.category_id !== baseCategoryId ||
         formData.images.length > 0
       );
 
@@ -413,7 +468,9 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
         setConfirmModal({
           isOpen: true,
           title: '确认关闭',
-          message: '取消后修改的内容将不被保存。确定要关闭吗？',
+          message: isEditMode
+            ? '取消后修改的内容将不被保存。确定要关闭吗？'
+            : '取消后输入的内容将不被保存。确定要关闭吗？',
           confirmText: '确认关闭',
           cancelText: '继续编辑',
           type: 'warning',
@@ -638,7 +695,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           </div>
 
           {/* 参与人数和费用 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">
                 <span className="label-text">最大参与人数 *</span>
@@ -656,24 +713,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
 
             <div>
               <label className="label">
-                <span className="label-text">费用类型 *</span>
-              </label>
-              <select
-                name="fee_type"
-                value={formData.fee_type}
-                onChange={handleInputChange}
-                className="select select-bordered w-full"
-              >
-                <option value={FeeType.FREE}>免费</option>
-                <option value={FeeType.AA}>AA制</option>
-                <option value={FeeType.PREPAID_ALL}>预付全部费用</option>
-                <option value={FeeType.PREPAID_REFUNDABLE}>预付多退少补</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="label">
-                <span className="label-text">费用金额</span>
+                <span className="label-text">费用金额（填 0 表示免费）</span>
               </label>
               <input
                 type="number"
@@ -682,8 +722,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                 onChange={handleInputChange}
                 min="0"
                 step="0.01"
-                disabled={formData.fee_type === FeeType.FREE}
-                className={`input input-bordered w-full ${errors.fee_amount ? 'input-error' : ''} ${formData.fee_type === FeeType.FREE ? 'input-disabled' : ''}`}
+                className={`input input-bordered w-full ${errors.fee_amount ? 'input-error' : ''}`}
               />
               {errors.fee_amount && <div className="text-error text-sm mt-1">{errors.fee_amount}</div>}
             </div>
@@ -743,7 +782,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
           {/* 活动图片 */}
           <div>
             <label className="label">
-              <span className="label-text">活动图片</span>
+              <span className="label-text">添加更多活动图片</span>
             </label>
             <div className="space-y-2">
               {formData.images.map((url, index) => (
@@ -759,7 +798,7 @@ const ActivityFormModal: React.FC<ActivityFormModalProps> = ({
                           setFormData(prev => ({ ...prev, images: newImages }));
                         }}
                         className={`input input-bordered w-full ${(imagePreviewStatus[index] === 'loaded' || imagePreviewStatus[index] === 'error') ? 'pr-10' : ''}`}
-                        placeholder="图片URL"
+                        placeholder="请输入图片URL"
                       />
                       {imagePreviewStatus[index] === 'loaded' && (
                         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-success" aria-label={`活动图片${index + 1}已加载`}>

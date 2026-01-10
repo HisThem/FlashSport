@@ -3,7 +3,6 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -102,7 +101,6 @@ export class ActivityService {
       organizer_id,
       keyword,
       status,
-      fee_type,
       province,
       city,
       sort = 'newest',
@@ -138,10 +136,6 @@ export class ActivityService {
 
     if (status) {
       queryBuilder.andWhere('activity.status = :status', { status });
-    }
-
-    if (fee_type) {
-      queryBuilder.andWhere('activity.fee_type = :fee_type', { fee_type });
     }
 
     if (keyword) {
@@ -412,8 +406,10 @@ export class ActivityService {
     });
 
     if (existingEnrollment) {
-      throw new ConflictException('您已报名该活动');
+      throw new BadRequestException('您已报名该活动');
     }
+
+    let enrollment: Enrollment | null = null;
 
     // 检查是否有已取消的报名记录
     const cancelledEnrollment = await this.enrollmentRepository.findOne({
@@ -423,8 +419,6 @@ export class ActivityService {
         status: EnrollmentStatus.CANCELLED,
       },
     });
-
-    let enrollment: Enrollment;
 
     if (cancelledEnrollment) {
       // 如果有已取消的记录，重新激活它
@@ -462,6 +456,29 @@ export class ActivityService {
     }
 
     return enrollmentWithUser;
+  }
+
+  async deleteActivity(id: number, userId: number): Promise<void> {
+    const activity = await this.activityRepository.findOne({ where: { id } });
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    // 只有活动组织者可以删除
+    if (activity.organizer_id !== userId) {
+      throw new ForbiddenException('只有活动组织者可以删除该活动');
+    }
+
+    await this.activityRepository.delete(id);
+  }
+
+  async deleteActivityAsAdmin(id: number): Promise<void> {
+    const activity = await this.activityRepository.findOne({ where: { id } });
+    if (!activity) {
+      throw new NotFoundException('活动不存在');
+    }
+
+    await this.activityRepository.delete(id);
   }
 
   async cancelEnrollment(activityId: number, userId: number): Promise<void> {
@@ -773,26 +790,6 @@ export class ActivityService {
       limit,
       totalPages,
     };
-  }
-
-  async deleteActivity(activityId: number): Promise<void> {
-    // 验证管理员权限（这里假设已在控制器层验证）
-    const activity = await this.activityRepository.findOne({
-      where: { id: activityId },
-    });
-
-    if (!activity) {
-      throw new NotFoundException('活动不存在');
-    }
-
-    // 删除相关的报名记录
-    await this.enrollmentRepository.delete({ activity_id: activityId });
-
-    // 删除相关的图片记录
-    await this.activityImageRepository.delete({ activity_id: activityId });
-
-    // 删除活动
-    await this.activityRepository.delete(activityId);
   }
 
   async updateActivityAsAdmin(

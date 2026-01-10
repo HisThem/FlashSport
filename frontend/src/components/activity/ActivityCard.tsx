@@ -1,5 +1,5 @@
 import Avatar from '../Avatar';
-import { Activity, ActivityStatus, FeeType } from '../../api/activity';
+import { Activity, ActivityStatus } from '../../api/activity';
 import { canUserCancelEnrollment, canUserEnroll, enrichActivityWithEnrollmentStatus, formatActivityLocation } from '../../utils/activity';
 import { formatDate, formatTime } from '../../utils/date';
 import React, { useState, useEffect } from 'react';
@@ -95,19 +95,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
   };
 
   // 获取费用显示文本
-  const getFeeText = (feeType: FeeType, feeAmount: number) => {
-    switch (feeType) {
-      case FeeType.FREE:
-        return '免费';
-      case FeeType.AA:
-        return 'AA制';
-      case FeeType.PREPAID_ALL:
-        return `￥${feeAmount}`;
-      case FeeType.PREPAID_REFUNDABLE:
-        return `￥${feeAmount}(多退少补)`;
-      default:
-        return '费用待定';
-    }
+  const getFeeText = (feeAmount: number) => {
+    return Number(feeAmount) === 0 ? '免费' : `￥${feeAmount}`;
   };
 
   // 检查是否可以报名
@@ -156,7 +145,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           if (onEnroll) {
             await onEnroll(enrichedActivity.id);
           }
-        } catch (error) {
+        } catch {
           // Rollback on error
           setIsEnrolled(previousIsEnrolled);
           setEnrollmentCount(previousEnrollmentCount);
@@ -193,7 +182,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
           if (onCancelEnrollment) {
             await onCancelEnrollment(enrichedActivity.id);
           }
-        } catch (error) {
+        } catch {
           // Rollback on error
           setIsEnrolled(previousIsEnrolled);
           setEnrollmentCount(previousEnrollmentCount);
@@ -301,7 +290,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
             </svg>
             <span className="text-base-content/80">
-              {getFeeText(enrichedActivity.fee_type, enrichedActivity.fee_amount)}
+              {getFeeText(enrichedActivity.fee_amount)}
             </span>
           </div>
           

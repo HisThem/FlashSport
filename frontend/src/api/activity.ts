@@ -10,14 +10,6 @@ export enum ActivityStatus {
   CANCELLED = 'cancelled'           // 已取消
 }
 
-// 费用类型枚举
-export enum FeeType {
-  FREE = 'free',                // 免费
-  AA = 'aa',                   // AA制
-  PREPAID_ALL = 'prepaid_all',  // 预付全部费用
-  PREPAID_REFUNDABLE = 'prepaid_refundable'  // 预付多退少补
-}
-
 // 报名状态枚举
 export enum EnrollmentStatus {
   ENROLLED = 'enrolled',        // 已报名
@@ -51,7 +43,6 @@ export interface Activity {
   registration_deadline: string;
   max_participants: number;
   status: ActivityStatus;
-  fee_type: FeeType;
   fee_amount: number;
   organizer_id: number;
   category_id: number;
@@ -96,7 +87,6 @@ export interface CreateActivityRequest {
   end_time: string;
   registration_deadline: string;
   max_participants: number;
-  fee_type: FeeType;
   fee_amount: number;
   category_id: number;
   image_urls?: string[];
@@ -114,7 +104,6 @@ export interface UpdateActivityRequest {
   end_time?: string;
   registration_deadline?: string;
   max_participants?: number;
-  fee_type?: FeeType;
   fee_amount?: number;
   category_id?: number;
   image_urls?: string[];

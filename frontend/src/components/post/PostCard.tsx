@@ -70,7 +70,7 @@ const PostCard: React.FC<PostCardProps> = ({
       if (onLikeChange) {
         await onLikeChange(post.id, newIsLiked);
       }
-    } catch (error) {
+    } catch {
       // Rollback on error
       setIsLiked(previousIsLiked);
       setLikeCount(previousLikeCount);

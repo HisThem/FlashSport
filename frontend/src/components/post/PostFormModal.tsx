@@ -26,11 +26,13 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
     null,
   );
   const [enrolledActivities, setEnrolledActivities] = useState<Activity[]>([]);
+  const [createdActivities, setCreatedActivities] = useState<Activity[]>([]);
   const [searchResults, setSearchResults] = useState<Activity[]>([]);
   const [showActivitySearch, setShowActivitySearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingEnrolled, setIsLoadingEnrolled] = useState(false);
+  const [linkedActivity, setLinkedActivity] = useState<Activity | null>(null);
   const [imagePreviewStatus, setImagePreviewStatus] = useState<ImagePreviewStatus>('idle');
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
     isOpen: false,
@@ -43,10 +45,16 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadEnrolledActivities();
+      loadCreatedActivities();
       if (editingPost) {
         setContent(editingPost.content);
         setCoverImageUrl(editingPost.cover_image_url || '');
         setSelectedActivityId(editingPost.activity_id || null);
+        if (editingPost.activity_id) {
+          prefillLinkedActivity(editingPost.activity_id);
+        } else {
+          setLinkedActivity(null);
+        }
       } else {
         resetForm();
       }
@@ -92,10 +100,12 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
           page: 1,
           limit: 20,
         });
-        // 筛选掉已经在已参加活动中的活动
-        const filtered = result.items.filter(
-          (item) => !enrolledActivities.some((enrolled) => enrolled.id === item.id),
-        );
+        const existingIds = new Set([
+          ...enrolledActivities.map((a) => a.id),
+          ...createdActivities.map((a) => a.id),
+        ]);
+        // 筛选掉已经在已参加/发起活动中的活动
+        const filtered = result.items.filter((item) => !existingIds.has(item.id));
         setSearchResults(filtered);
       } catch (error) {
         console.error('搜索活动失败:', error);
@@ -106,12 +116,13 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
     }, 500); // 500ms 防抖
 
     return () => clearTimeout(timer);
-  }, [searchQuery, enrolledActivities]);
+  }, [searchQuery, enrolledActivities, createdActivities]);
 
   const resetForm = () => {
     setContent('');
     setCoverImageUrl('');
     setSelectedActivityId(null);
+    setLinkedActivity(null);
     setSearchQuery('');
     setShowActivitySearch(false);
     setSearchResults([]);
@@ -134,14 +145,43 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
     }
   };
 
+  const loadCreatedActivities = async () => {
+    setIsLoadingEnrolled(true);
+    try {
+      const result = await activityAPI.getMyActivities({
+        page: 1,
+        limit: 20,
+      });
+      setCreatedActivities(result.items);
+    } catch (error) {
+      console.error('加载我发起的活动失败:', error);
+      setCreatedActivities([]);
+    } finally {
+      setIsLoadingEnrolled(false);
+    }
+  };
+
+  // 编辑模式时，如果帖子已关联活动但不在「已参加」列表里，也要取详情以便回显
+  const prefillLinkedActivity = async (activityId: number) => {
+    try {
+      const detail = await activityAPI.getActivityById(activityId);
+      setLinkedActivity(detail);
+      setSelectedActivityId(activityId);
+    } catch (error) {
+      console.error('加载已关联活动失败:', error);
+    }
+  };
+
   const handleSelectActivity = (activity: Activity) => {
     setSelectedActivityId(activity.id);
+    setLinkedActivity(activity);
     setShowActivitySearch(false);
     // 不清空 searchQuery，这样 searchResults 不会被清空，selectedActivity 可以继续找到活动信息
   };
 
   const handleRemoveActivity = () => {
     setSelectedActivityId(null);
+    setLinkedActivity(null);
     setSearchQuery('');
     setShowActivitySearch(false);
     setSearchResults([]);
@@ -241,6 +281,7 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
   if (!isOpen) return null;
 
   const selectedActivity =
+    linkedActivity ||
     enrolledActivities.find((a) => a.id === selectedActivityId) ||
     searchResults.find((a) => a.id === selectedActivityId);
 
@@ -425,52 +466,61 @@ const PostFormModal: React.FC<PostFormModalProps> = ({
                   </div>
                 </div>
 
-                {/* 已参加的活动 */}
+                {/* 已参加/发起的活动 */}
                 {isLoadingEnrolled ? (
                   <div className="text-center py-6">
                     <span className="loading loading-spinner"></span>
                   </div>
-                ) : enrolledActivities.length > 0 ? (
+                ) : (enrolledActivities.length + createdActivities.length) > 0 ? (
+                  (() => {
+                    const mergedMap = new Map<number, Activity>();
+                    [...enrolledActivities, ...createdActivities].forEach((a) => {
+                      mergedMap.set(a.id, a);
+                    });
+                    const mergedActivities = Array.from(mergedMap.values());
+                    return (
                   <div>
-                    <p className="text-sm text-base-content/50 mb-3 font-medium">
-                      或选择您已参加的活动：
-                    </p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                      {enrolledActivities.map((activity) => (
-                        <button
-                          key={activity.id}
-                          type="button"
-                          onClick={() => handleSelectActivity(activity)}
-                          className="card bg-base-100 border border-base-300 hover:border-primary hover:shadow-md transition-all overflow-hidden"
-                          disabled={isLoading}
-                        >
-                          <figure className="relative w-full aspect-video bg-base-200">
-                            {activity.cover_image_url ? (
-                              <img
-                                src={activity.cover_image_url}
-                                alt={activity.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center w-full h-full">
-                                <svg className="w-8 h-8 text-base-300" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4.5-4.5 3 3 5-5 3.5 3.5z" />
-                                </svg>
-                              </div>
-                            )}
-                          </figure>
-                          <div className="card-body p-2">
-                            <h3 className="text-xs font-semibold line-clamp-2">
-                              {activity.name}
-                            </h3>
-                            <p className="text-xs text-base-content/60">
-                              {activity.city}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                      <p className="text-sm text-base-content/50 mb-3 font-medium">
+                        或选择您参加或发起的活动：
+                      </p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                        {mergedActivities.map((activity) => (
+                          <button
+                            key={activity.id}
+                            type="button"
+                            onClick={() => handleSelectActivity(activity)}
+                            className="card bg-base-100 border border-base-300 hover:border-primary hover:shadow-md transition-all overflow-hidden"
+                            disabled={isLoading}
+                          >
+                            <figure className="relative w-full aspect-video bg-base-200">
+                              {activity.cover_image_url ? (
+                                <img
+                                  src={activity.cover_image_url}
+                                  alt={activity.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center justify-center w-full h-full">
+                                  <svg className="w-8 h-8 text-base-300" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4.5-4.5 3 3 5-5 3.5 3.5z" />
+                                  </svg>
+                                </div>
+                              )}
+                            </figure>
+                            <div className="card-body p-2">
+                              <h3 className="text-xs font-semibold line-clamp-2">
+                                {activity.name}
+                              </h3>
+                              <p className="text-xs text-base-content/60">
+                                {activity.city}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                    );
+                  })()
                 ) : null}
               </div>
             )}

@@ -257,7 +257,20 @@ export class ActivityController {
       throw new ForbiddenException('只有管理员可以删除活动');
     }
 
-    await this.activityService.deleteActivity(id);
+    await this.activityService.deleteActivityAsAdmin(id);
+    return {
+      success: true,
+      message: '活动删除成功',
+    };
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteActivity(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<ApiResponse> {
+    await this.activityService.deleteActivity(id, req.user.id);
     return {
       success: true,
       message: '活动删除成功',

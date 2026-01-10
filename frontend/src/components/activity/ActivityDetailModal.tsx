@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Enrollment, ActivityStatus, FeeType } from '../../api/activity';
+import { Activity, Enrollment, ActivityStatus } from '../../api/activity';
 import activityAPI from '../../api/activity';
 import userAPI from '../../api/user';
 import { getFriendlyDate, getTimeLeft, isExpired } from '../../utils/date';
@@ -30,7 +30,8 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(false);
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [previewIndex, setPreviewIndex] = useState<number>(0);
   const [currentUser] = useState(userAPI.getCurrentUserFromStorage());
   const [confirmModal, setConfirmModal] = useState<ConfirmModalConfig>({
     isOpen: false,
@@ -113,6 +114,30 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
   // 确保活动有正确的报名状态信息
   const enrichedActivity = enrichActivityWithEnrollmentStatus(activity);
 
+  const galleryImages = [
+    ...(enrichedActivity.cover_image_url ? [enrichedActivity.cover_image_url] : []),
+    ...(enrichedActivity.images?.map(image => image.image_url) || [])
+  ];
+
+  const openPreview = (index: number) => {
+    if (!galleryImages.length) return;
+    setPreviewImages(galleryImages);
+    setPreviewIndex(index);
+  };
+
+  const closePreview = () => {
+    setPreviewImages([]);
+    setPreviewIndex(0);
+  };
+
+  const showPrevImage = () => {
+    setPreviewIndex(prev => (prev - 1 + previewImages.length) % previewImages.length);
+  };
+
+  const showNextImage = () => {
+    setPreviewIndex(prev => (prev + 1) % previewImages.length);
+  };
+
   const isOwner = currentUser?.id === enrichedActivity.organizer_id;
   const canEnroll = enrichedActivity.status === ActivityStatus.RECRUITING && 
                    !isExpired(enrichedActivity.registration_deadline) && 
@@ -149,14 +174,8 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     }
   };
 
-  const getFeeText = (feeType: FeeType, feeAmount: number) => {
-    switch (feeType) {
-      case FeeType.FREE: return '免费';
-      case FeeType.AA: return 'AA制';
-      case FeeType.PREPAID_ALL: return `预付 ￥${feeAmount}`;
-      case FeeType.PREPAID_REFUNDABLE: return `预付 ￥${feeAmount} (多退少补)`;
-      default: return '费用待定';
-    }
+  const getFeeText = (feeAmount: number) => {
+    return Number(feeAmount) === 0 ? '免费' : `￥${feeAmount}`;
   };
 
   return (
@@ -218,7 +237,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
 
               <div className="flex items-center gap-2">
                 <span className="font-medium">费用:</span>
-                <span>{getFeeText(enrichedActivity.fee_type, enrichedActivity.fee_amount)}</span>
+                <span>{getFeeText(enrichedActivity.fee_amount)}</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -334,7 +353,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                     }}
-                    onClick={() => setPreviewImage(enrichedActivity.cover_image_url || '')}
+                    onClick={() => openPreview(0)}
                   />
                   <div className="absolute top-2 left-2 bg-primary text-primary-content text-xs px-2 py-1 rounded">
                     封面
@@ -353,7 +372,7 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                     }}
-                    onClick={() => setPreviewImage(image.image_url)}
+                    onClick={() => openPreview((enrichedActivity.cover_image_url ? 1 : 0) + index)}
                   />
                 </div>
               ))}
@@ -399,12 +418,12 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
     </div>
 
     {/* 图片预览模态框 */}
-    {previewImage && (
+    {previewImages.length > 0 && (
       <div className="modal modal-open pt-20">
-        <div className="modal-box max-w-4xl p-0 bg-transparent shadow-none">
+        <div className="modal-box modal-bounce max-w-4xl p-0 bg-transparent shadow-none">
           <div className="relative">
             <img 
-              src={previewImage} 
+              src={previewImages[previewIndex]} 
               alt="活动照片预览"
               className="w-full max-h-[80vh] object-contain rounded-lg"
               onError={(e) => {
@@ -414,15 +433,36 @@ const ActivityDetailModal: React.FC<ActivityDetailModalProps> = ({
             />
             <button 
               className="btn btn-circle btn-sm absolute top-2 right-2 bg-black/50 border-none text-white hover:bg-black/70"
-              onClick={() => setPreviewImage(null)}
+              onClick={closePreview}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+
+            {previewImages.length > 1 && (
+              <>
+                <button
+                  className="btn btn-circle btn-sm absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 border-none text-white hover:bg-black/70"
+                  onClick={showPrevImage}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  className="btn btn-circle btn-sm absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 border-none text-white hover:bg-black/70"
+                  onClick={showNextImage}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         </div>
-        <div className="modal-backdrop bg-black/80" onClick={() => setPreviewImage(null)}></div>
+        <div className="modal-backdrop bg-black/50" onClick={closePreview}></div>
       </div>
     )}
     </>

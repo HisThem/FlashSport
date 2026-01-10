@@ -21,13 +21,6 @@ export enum ActivityStatus {
   CANCELLED = 'cancelled',
 }
 
-export enum FeeType {
-  FREE = 'free',
-  AA = 'aa',
-  PREPAID_ALL = 'prepaid_all',
-  PREPAID_REFUNDABLE = 'prepaid_refundable',
-}
-
 @Entity('activities')
 export class Activity {
   @PrimaryGeneratedColumn()
@@ -69,13 +62,6 @@ export class Activity {
     default: ActivityStatus.RECRUITING,
   })
   status: ActivityStatus;
-
-  @Column({
-    type: 'varchar',
-    enum: FeeType,
-    default: FeeType.FREE,
-  })
-  fee_type: FeeType;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   fee_amount: number;

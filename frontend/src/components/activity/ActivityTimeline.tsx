@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Activity, ActivityStatus } from '../../api/activity';
 
 interface ActivityTimelineProps {
@@ -29,10 +29,33 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
   const timelineRef = useRef<HTMLDivElement>(null);
   const nearestFutureRef = useRef<HTMLDivElement>(null);
 
-  // 按开始时间排序活动（从旧到新）
-  const sortedActivities = [...activities].sort((a, b) => 
-    new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+  // 按开始时间排序活动（从新到旧）
+  const sortedActivities = useMemo(
+    () =>
+      [...activities].sort(
+        (a, b) =>
+          new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+      ),
+    [activities],
   );
+
+  // 找到最近的未来活动 ID，用于滚动标记
+  const nearestFutureId = useMemo(() => {
+    const now = Date.now();
+    let nearest: { id: number; diff: number } | null = null;
+
+    sortedActivities.forEach((activity) => {
+      const start = new Date(activity.start_time).getTime();
+      if (start >= now) {
+        const diff = start - now;
+        if (!nearest || diff < nearest.diff) {
+          nearest = { id: activity.id, diff };
+        }
+      }
+    });
+
+    return nearest?.id ?? null;
+  }, [sortedActivities]);
 
   // 按月份分组活动
   const groupedActivities: TimelineGroup[] = [];
@@ -55,18 +78,17 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     group.activities.push(activity);
   });
 
-  // 找到最近的未来活动
+  // 找到最近的未来活动并滚动到视口
   useEffect(() => {
     if (nearestFutureRef.current && timelineRef.current) {
-      // 延迟滚动，确保DOM已渲染
       setTimeout(() => {
-        nearestFutureRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
+        nearestFutureRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
         });
       }, 100);
     }
-  }, [activities]);
+  }, [nearestFutureId]);
 
   const now = new Date();
 
@@ -117,7 +139,7 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           const activityEndDate = new Date(activity.end_time);
           const isFuture = activityDate >= now;
           const isFinished = activityEndDate < now;
-          const isNearestFuture = isFuture && sortedActivities.slice(0, index).every(a => new Date(a.start_time) < now);
+          const isNearestFuture = activity.id === nearestFutureId;
           
           const isOwner = isMyActivity(activity);
           const isEnrolled = isEnrolledActivity(activity);
