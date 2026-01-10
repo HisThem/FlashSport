@@ -1,6 +1,6 @@
-# FlashSport
+MeetMates
 
-FlashSport is a full-stack sports community app. Users can post community updates, like and comment on posts, and join activities. The backend is built with NestJS + TypeORM (SQLite by default); the frontend uses React + Vite + Tailwind.
+MeetMates is a full-stack sports community app. Users can post community updates, like and comment on posts, and join activities. The backend is built with NestJS + TypeORM (SQLite by default); the frontend uses React + Vite + Tailwind.
 
 ## Project Structure
 ```
