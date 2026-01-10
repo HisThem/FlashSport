@@ -44,7 +44,7 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
     const now = Date.now();
     let nearest: { id: number; diff: number } | null = null;
 
-    sortedActivities.forEach((activity) => {
+    for (const activity of sortedActivities) {
       const start = new Date(activity.start_time).getTime();
       if (start >= now) {
         const diff = start - now;
@@ -52,7 +52,7 @@ const ActivityTimeline: React.FC<ActivityTimelineProps> = ({
           nearest = { id: activity.id, diff };
         }
       }
-    });
+    }
 
     return nearest?.id ?? null;
   }, [sortedActivities]);
